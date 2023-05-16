@@ -15,6 +15,10 @@ namespace System.Collections.Generic
             m.Name == nameof(Enumerable.Where) &&
             m.GetParameters().Select(p => p.ParameterType.GetGenericTypeDefinition()).SequenceEqual(
             new[] { typeof(IEnumerable<>), typeof(Func<,>) }));
+        private static readonly MethodInfo _skipMethod = typeof(Enumerable).GetMethods().First(m =>
+            m.Name == nameof(Enumerable.Skip) && m.IsPublic);
+        private static readonly MethodInfo _takeMethod = typeof(Enumerable).GetMethods().First(m =>
+            m.Name == nameof(Enumerable.Take) && m.IsPublic);
 
         public static IEnumerable Apply<T>(this IEnumerable<T> source, Query<T> query) => 
             InnerApply(source, query);
@@ -30,6 +34,18 @@ namespace System.Collections.Generic
             {
                 var whereMethod = _whereMethod.MakeGenericMethod(typeof(T));
                 result = (IEnumerable)whereMethod.Invoke(null, new object[] { result, query.Expressions.FilterExpression.Compile() });
+            }
+
+            if (query.Skip.HasValue)
+            {
+                var skipMethod = _skipMethod.MakeGenericMethod(typeof(T));
+                result = (IEnumerable)skipMethod.Invoke(null, new object[] { result, query.Skip.Value });
+            }
+
+            if (query.Take.HasValue)
+            {
+                var takeMethod = _takeMethod.MakeGenericMethod(typeof(T));
+                result = (IEnumerable)takeMethod.Invoke(null, new object[] { result, query.Take.Value });
             }
 
             if (query.Expressions.SelectExpression != null)

@@ -17,12 +17,18 @@ namespace Mt.GraphQL.Api
             set => Expressions.ParseFilter(value ?? string.Empty);
         }
 
+        public int? Skip { get; set; }
+
+        public int? Take { get; set; }
+
         public Query() { }
 
         internal Query(Query<T> from)
         {
             Expressions.SelectExpression = from.Expressions.SelectExpression;
             Expressions.FilterExpression = from.Expressions.FilterExpression;
+            Skip = from.Skip;
+            Take = from.Take;
         }
 
         internal QueryExpressions<T> Expressions { get; } = new QueryExpressions<T>();
@@ -43,6 +49,20 @@ namespace Mt.GraphQL.Api
                 sb.Append($"filter={filter}");
             }
 
+            if (Skip.HasValue)
+            {
+                if (sb.Length > 0)
+                    sb.Append('&');
+                sb.Append($"skip={Skip.Value}");
+            }
+
+            if (Take.HasValue)
+            {
+                if (sb.Length > 0)
+                    sb.Append('&');
+                sb.Append($"take={Take.Value}");
+            }
+
             return sb.ToString();
         }
 
@@ -59,12 +79,16 @@ namespace Mt.GraphQL.Api
         {
             Expressions.SelectExpression = from.Expressions.SelectExpression;
             Expressions.FilterExpression = from.Expressions.FilterExpression;
+            Skip = from.Skip;
+            Take = from.Take;
         }
 
         internal Query(Query<T> from)
         {
             Expressions.SelectExpression = from.Expressions.SelectExpression;
             Expressions.FilterExpression = from.Expressions.FilterExpression;
+            Skip = from.Skip;
+            Take = from.Take;
         }
     }
 }

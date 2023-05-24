@@ -10,12 +10,20 @@ namespace Mt.GraphQL.Api.Test
         [Test]
         public void Test1()
         {
-            var query = new Query<Entity>()
+            var clientQuery = new Query<Entity>()
                 .Select(x => new { x.Id, x.Name, RelatedName = x.Related.Name })
                 .Where(x => x.Description.Contains("Entity"))
                 .Skip(1)
                 .Take(2);
-            Assert.That(query.ToString(), Is.EqualTo("select=Id,Name,Related.Name&filter=contains(Description,'Entity')&skip=1&take=2"));
+            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Id,Name,Related.Name&filter=contains(Description,'Entity')&skip=1&take=2"));
+
+            var serverQuery = new Query<Entity>
+            {
+                Filter = clientQuery.Filter,
+                Select = clientQuery.Select,
+                Skip = clientQuery.Skip,
+                Take = clientQuery.Take
+            };
 
             var set = new[]
             {
@@ -26,7 +34,10 @@ namespace Mt.GraphQL.Api.Test
                 new Entity { Id = 5, Name= "E", Description = "Entity E", Related = new Entity{ Name = "Related to E" } },
                 new Entity { Id = 6, Name= "F", Description = "Entity F", Related = new Entity{ Name = "Related to F" } }
             };
-            var result = set.Apply(query).ToArray();
+            var serverResult = set.Apply(serverQuery);
+
+            var json = serverResult.ToJson();
+            var result = clientQuery.ParseJson(json);
 
             Assert.Multiple(() =>
             {

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace Mt.GraphQL.Api
@@ -52,5 +54,13 @@ namespace Mt.GraphQL.Api
 
         public static Query<T, TResult> Take<T, TResult>(this Query<T, TResult> query, int take) => 
             new Query<T, TResult>(query) { Take = take };
+
+        public static TResult[] ParseJson<T, TResult>(this Query<T, TResult> query, string json)
+        {
+            var visitor = new SelectSerializer<T, TResult>();
+            visitor.Visit(query.Expressions?.SelectExpression ?? throw new Exception("No Select expression present"));
+
+            return JArray.Parse(json).Select(visitor.ResultMapping).ToArray();
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Mt.GraphQL.Api;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -25,6 +26,9 @@ namespace System.Collections.Generic
 
         public static IEnumerable<TResult> Apply<T, TResult>(this IEnumerable<T> source, Query<T, TResult> query) =>
             (IEnumerable<TResult>)InnerApply(source, query);
+
+        public static string ToJson(this IEnumerable source) =>
+            JArray.FromObject(source).ToString();
 
         private static IEnumerable InnerApply<T>(IEnumerable<T> source, Query<T> query)
         {

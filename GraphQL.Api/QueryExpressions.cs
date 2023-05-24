@@ -25,7 +25,7 @@ namespace Mt.GraphQL.Api
                         expr = Expression.Property(expr, prop);
                         t = prop.PropertyType;
                     }
-                    return new { expr, type = t, name = propName };
+                    return new { expr, type = t, name = propName.Replace('.', '_') };
                 })
                 .ToArray();
             if (!properties.Any())

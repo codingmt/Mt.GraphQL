@@ -28,7 +28,7 @@ namespace Mt.GraphQL.Api.Test
 #endif
         }
 
-        public static void Throws(this Func<Query<Entity>> queryCreator, string exceptionType = null, string message = null)
+        public static void Throws(this Func<Query<Entity>> queryCreator, string? exceptionType = null, string? message = null)
         {
             try
             {

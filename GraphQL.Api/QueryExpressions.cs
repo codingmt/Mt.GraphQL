@@ -28,16 +28,21 @@ namespace Mt.GraphQL.Api
                     return new { expr, type = t, name = propName.Replace('.', '_') };
                 })
                 .ToArray();
-            if (!properties.Any())
+            switch (properties.Length)
             {
-                SelectExpression = null;
-                return;
+                case 0:
+                    SelectExpression = null;
+                    break;
+                case 1:
+                    SelectExpression = Expression.Lambda(properties[0].expr, parameter);
+                    break;
+                default:
+                    var type = TypeBuilder.GetType(properties.Select(p => (p.name, p.type)).ToArray());
+                    SelectExpression = Expression.Lambda(
+                        Expression.New(type.GetConstructors().First(), properties.Select(x => x.expr).ToArray()),
+                        parameter);
+                    break;
             }
-
-            var type = TypeBuilder.GetType(properties.Select(p => (p.name, p.type)).ToArray());
-            SelectExpression = Expression.Lambda(
-                Expression.New(type.GetConstructors().First(), properties.Select(x => x.expr).ToArray()),
-                parameter);
         }
         public string GetSelect()
         {

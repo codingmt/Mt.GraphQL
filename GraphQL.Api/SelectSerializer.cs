@@ -14,26 +14,31 @@ namespace Mt.GraphQL.Api
         {
             if (!(node is LambdaExpression lambda))
                 throw new ArgumentException("Select expression must be a lambda expression.");
-            if (!(lambda.Body is NewExpression newexp))
-                throw new ArgumentException("Select expression must be like x => new { x.Id, ... }");
 
-            Members = newexp.Arguments
-                .Select(a =>
-                    {
-                        string selector = string.Empty;
-                        while (a is MemberExpression member)
-                        {
-                            if (selector.Length > 0) 
-                                selector = "." + selector;
-                            selector = member.Member.Name + selector;
-                            a = member.Expression;
-                        }
-
-                        return selector;
-                    })
-                .ToArray();
+            if (lambda.Body is NewExpression newexp)
+                Members = newexp.Arguments
+                    .Select(getMember)
+                    .ToArray();
+            else if (lambda.Body is MemberExpression member)
+                Members = new[] { getMember(member) };
+            else
+                throw new ArgumentException("Select expression must be like x => new { x.<member>, ... } or x => x.<member>");
 
             return node;
+
+            static string getMember(Expression exp)
+            {
+                string selector = string.Empty;
+                while (exp is MemberExpression member)
+                {
+                    if (selector.Length > 0)
+                        selector = "." + selector;
+                    selector = member.Member.Name + selector;
+                    exp = member.Expression;
+                }
+
+                return selector;
+            }
         }
 
         public override string ToString() => string.Join(',', Members);
@@ -47,8 +52,15 @@ namespace Mt.GraphQL.Api
         {
             var result = base.Visit(node);
 
-            ResultMapping = CreateResultMappingForAnonymousType() 
-                ?? throw new Exception("Failed to create result mapping.");
+            var lambda = node as LambdaExpression
+                ?? throw new ArgumentException("Node must be a LambdaExpression.");
+
+            if (lambda.Body is NewExpression)
+                ResultMapping = CreateResultMappingForAnonymousType();
+            else if (lambda.Body is MemberExpression)
+                ResultMapping = CreateResultMappingForMember();
+            else
+                throw new Exception("Failed to create result mapping.");
 
             return result;
         }
@@ -72,45 +84,15 @@ namespace Mt.GraphQL.Api
                 (TTo)constructor.Invoke(getPropertyFunctions.Select(f => f(jToken)).ToArray());
         }
 
+        private Func<JToken, TTo>? CreateResultMappingForMember()
+        {
+            if (typeof(TTo).IsClass)
+                return jToken => jToken.ToObject<TTo>();
+
+            return jToken => jToken.Value<TTo>();
+        }
+
         private static Func<JToken, object> CreateGetPropertyFunction<T>(string jsonMemberName) =>
             jToken => jToken[jsonMemberName].Value<T>();
-
-        private void CreateResultMapping()
-        {
-            var createPropertyActionMethod = typeof(SelectSerializer<TFrom, TTo>)
-                .GetMethod(nameof(CreatePropertyAction), BindingFlags.NonPublic | BindingFlags.Static);
-            var setPropertyActions = typeof(TTo).GetProperties()
-                .Select((p, i) =>
-                {
-                    var setter = p.GetSetMethod();
-                    var jsonMemberName = Members[i];
-                    return (Action<JToken, TTo>) createPropertyActionMethod.MakeGenericMethod(p.PropertyType).Invoke(null, new object[] { setter, jsonMemberName });
-                })
-                .ToArray();
-            var setPropertiesAction = CombineActions(setPropertyActions);
-
-            ResultMapping = jToken =>
-            {
-                var result = (TTo)Activator.CreateInstance(typeof(TTo));
-                setPropertiesAction(jToken, result);
-                return result;
-            };
-        }
-
-        private static Action<JToken, TTo> CreatePropertyAction<T>(MethodInfo setter, string jsonMemberName) =>
-            (jToken, tTo) =>
-            {
-                setter.Invoke(tTo, new object[] { jToken[jsonMemberName].Value<T>() });
-            };
-
-        private static Action<JToken, TTo> CombineActions(Action<JToken, TTo>[] actions)
-        {
-            var token = Expression.Parameter(typeof(JToken));
-            var to = Expression.Parameter(typeof(TTo));
-
-            var setProperties = Expression.Block(actions.Select(a => Expression.Call(null, a.Method, token, to)));
-            
-            return Expression.Lambda<Action<JToken, TTo>>(setProperties, token, to).Compile();
-        }
     }
 }

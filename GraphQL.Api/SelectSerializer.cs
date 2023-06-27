@@ -8,6 +8,11 @@ namespace Mt.GraphQL.Api
 {
     internal class SelectSerializer<TFrom> : ExpressionVisitor
     {
+        public SelectSerializer(Expression expression)
+        {
+            Visit(expression);
+        }
+
         protected string[] Members { get; private set; } = new string[0];
 
         public override Expression Visit(Expression node)
@@ -46,6 +51,9 @@ namespace Mt.GraphQL.Api
 
     internal class SelectSerializer<TFrom, TTo> : SelectSerializer<TFrom>
     {
+        public SelectSerializer(Expression expression) : base(expression)
+        { }
+
         public Func<JToken, TTo>? ResultMapping { get; private set; }
 
         public override Expression Visit(Expression node)

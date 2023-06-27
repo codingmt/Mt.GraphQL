@@ -5,9 +5,14 @@ using System.Linq.Expressions;
 
 namespace Mt.GraphQL.Api
 {
-    internal class QueryExpressions<T>
+    internal class QueryExpressions
     {
         public LambdaExpression? SelectExpression { get; set; }
+        public LambdaExpression? FilterExpression { get; set; }
+    }
+
+    internal class QueryExpressions<T> : QueryExpressions
+    {
         public void ParseSelect(string expression)
         {
             var parameter = Expression.Parameter(typeof(T), "x");
@@ -49,19 +54,17 @@ namespace Mt.GraphQL.Api
             if (SelectExpression == null)
                 return string.Empty;
 
-            var serializer = new SelectSerializer<T>();
-            serializer.Visit(SelectExpression);
-            return serializer.ToString();
+            return new SelectSerializer<T>(SelectExpression).ToString();
         }
 
-        public LambdaExpression? FilterExpression { get; set; }
         internal string? GetFilter()
         {
             if (FilterExpression == null)
                 return string.Empty;
 
-            return new FilterSerializer<T>().Serialize(FilterExpression);
+            return new FilterSerializer<T>(FilterExpression).ToString();
         }
+
         internal void ParseFilter(string filter)
         {
             FilterExpression = string.IsNullOrEmpty(filter) 

@@ -1,9 +1,11 @@
-﻿using System.Linq.Expressions;
+﻿using System;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace Mt.GraphQL.Api
 {
     public class Query<T>
+        where T : class
     {
         public string? Select 
         {
@@ -21,17 +23,24 @@ namespace Mt.GraphQL.Api
 
         public int? Take { get; set; }
 
-        public Query() { }
-
-        internal Query(Query<T> from)
-        {
-            Expressions.SelectExpression = from.Expressions.SelectExpression;
-            Expressions.FilterExpression = from.Expressions.FilterExpression;
-            Skip = from.Skip;
-            Take = from.Take;
-        }
-
         internal QueryExpressions<T> Expressions { get; } = new QueryExpressions<T>();
+
+        public virtual TQuery Clone<TQuery>()
+            where TQuery : Query<T>, new()
+        {
+            var myType = GetType();
+            var result = (TQuery)Activator.CreateInstance(
+                typeof(TQuery).IsAssignableFrom(myType)
+                    ? myType
+                    : typeof(TQuery));
+
+            result.Expressions.SelectExpression = Expressions.SelectExpression;
+            result.Expressions.FilterExpression = Expressions.FilterExpression;
+            result.Skip = Skip;
+            result.Take = Take;
+
+            return result;
+        }
 
         public override string ToString()
         {
@@ -74,21 +83,7 @@ namespace Mt.GraphQL.Api
     }
 
     public class Query<T, TResult> : Query<T>
+        where T : class
     {
-        internal Query(Query<T, TResult> from)
-        {
-            Expressions.SelectExpression = from.Expressions.SelectExpression;
-            Expressions.FilterExpression = from.Expressions.FilterExpression;
-            Skip = from.Skip;
-            Take = from.Take;
-        }
-
-        internal Query(Query<T> from)
-        {
-            Expressions.SelectExpression = from.Expressions.SelectExpression;
-            Expressions.FilterExpression = from.Expressions.FilterExpression;
-            Skip = from.Skip;
-            Take = from.Take;
-        }
     }
 }

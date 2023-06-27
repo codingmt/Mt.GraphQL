@@ -21,16 +21,19 @@ namespace System.Collections.Generic
         private static readonly MethodInfo _takeMethod = typeof(Enumerable).GetMethods().First(m =>
             m.Name == nameof(Enumerable.Take) && m.IsPublic);
 
-        public static IEnumerable Apply<T>(this IEnumerable<T> source, Query<T> query) => 
+        public static IEnumerable Apply<T>(this IEnumerable<T> source, Query<T> query)
+            where T : class => 
             InnerApply(source, query);
 
-        public static IEnumerable<TResult> Apply<T, TResult>(this IEnumerable<T> source, Query<T, TResult> query) =>
+        public static IEnumerable<TResult> Apply<T, TResult>(this IEnumerable<T> source, Query<T, TResult> query)
+            where T : class =>
             (IEnumerable<TResult>)InnerApply(source, query);
 
         public static string ToJson(this IEnumerable source) =>
             JArray.FromObject(source).ToString();
 
         private static IEnumerable InnerApply<T>(IEnumerable<T> source, Query<T> query)
+            where T : class
         {
             IEnumerable result = source;
 

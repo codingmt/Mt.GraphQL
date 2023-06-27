@@ -29,18 +29,20 @@ namespace Mt.GraphQL.Api
         private ParameterExpression? _parameter;
         private bool _evaluatingAnd = false;
 
-        public string Serialize(LambdaExpression filter)
+        public FilterSerializer(Expression filter)
         {
-            if (filter.Parameters.Count != 1 ||
-                filter.Parameters[0].Type != typeof(T))
+            if (!(filter is LambdaExpression lambda))
+                throw new ArgumentException("Filter should be a lambda expression.");
+            if (lambda.Parameters.Count != 1 ||
+                lambda.Parameters[0].Type != typeof(T))
                 throw new ArgumentException($"Expected a lambda with 1 parameter of type {typeof(T).FullName}.");
-            if (filter.ReturnType != typeof(bool))
+            if (lambda.ReturnType != typeof(bool))
                 throw new ArgumentException("Expected a lambda with return type Boolean.");
 
-            _parameter = filter.Parameters[0];
+
+            _parameter = lambda.Parameters[0];
             _result.Clear();
             Visit(filter);
-            return _result.ToString();
         }
 
         protected override Expression VisitBinary(BinaryExpression node)

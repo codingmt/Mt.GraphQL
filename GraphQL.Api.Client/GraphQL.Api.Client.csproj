@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Mt.$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>Mt.GraphQL.Api</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

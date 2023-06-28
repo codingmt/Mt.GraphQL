@@ -94,13 +94,17 @@ namespace Mt.GraphQL.Api
 
         private Func<JToken, TTo>? CreateResultMappingForMember()
         {
+            #pragma warning disable CS8603 // Possible null reference return.
             if (typeof(TTo).IsClass)
                 return jToken => jToken.ToObject<TTo>();
 
             return jToken => jToken.Value<TTo>();
+            #pragma warning restore CS8603 // Possible null reference return.
         }
 
-        private static Func<JToken, object> CreateGetPropertyFunction<T>(string jsonMemberName) =>
+        private static Func<JToken, object?> CreateGetPropertyFunction<T>(string jsonMemberName) =>
+            #pragma warning disable CS8604 // Possible null reference argument.
             jToken => jToken[jsonMemberName].Value<T>();
+            #pragma warning restore CS8604 // Possible null reference argument.
     }
 }

@@ -90,6 +90,7 @@ namespace Mt.GraphQL.Api.Test
             var result = clientQuery.ParseJson(json);
             Assert.Multiple(() =>
             {
+                Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Length.EqualTo(1));
                 Assert.That(result[0], Is.EqualTo(3));
             });
@@ -129,6 +130,7 @@ namespace Mt.GraphQL.Api.Test
             var result = clientQuery.ParseJson(json);
             Assert.Multiple(() =>
             {
+                Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Length.EqualTo(2));
                 Assert.That(result[0].Name, Is.EqualTo("Related to C"));
                 Assert.That(result[1], Is.Null);

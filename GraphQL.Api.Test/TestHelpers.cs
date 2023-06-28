@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections;
+using System.Linq.Expressions;
 
 namespace Mt.GraphQL.Api.Test
 {
@@ -45,5 +47,8 @@ namespace Mt.GraphQL.Api.Test
 
             throw new Exception($"Expected exception but the query did not throw.");
         }
-    } 
+
+        public static string ToJson(this IEnumerable source) =>
+            JArray.FromObject(source).ToString();
+    }
 }

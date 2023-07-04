@@ -21,7 +21,6 @@ namespace Mt.GraphQL.Api
                 {
                     propName = propName.Trim();
                     var t = typeof(T);
-                    string? p = null;
                     Expression expr = parameter;
                     foreach (var part in propName.Split('.'))
                     {

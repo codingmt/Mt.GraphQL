@@ -49,9 +49,15 @@ namespace Mt.GraphQL.Api
                 cq.CopyClientFrom(this);
         }
 
+        /// <summary>
+        /// Get a list of results.
+        /// </summary>
         public async Task<List<T>?> ToListAsync() =>
             JsonConvert.DeserializeObject<List<T>>(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
 
+        /// <summary>
+        /// Get an array of results.
+        /// </summary>
         public async Task<T[]?> ToArrayAsync() =>
             JsonConvert.DeserializeObject<T[]>(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
     }
@@ -77,9 +83,15 @@ namespace Mt.GraphQL.Api
                 cq.CopyClientFrom(this);
         }
 
+        /// <summary>
+        /// Get a list of results.
+        /// </summary>
         public async Task<List<TResult>?> ToListAsync() =>
             this.ParseJson(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString())).ToList();
 
+        /// <summary>
+        /// Get an array of results.
+        /// </summary>
         public async Task<TResult[]?> ToArrayAsync() =>
             this.ParseJson(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
     }

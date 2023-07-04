@@ -8,14 +8,14 @@ namespace Mt.GraphQL.Api
     /// </summary>
     public static class ClientQueryExtensions
     {
-        internal static ClientBase? GetClient(this IClientQuery clientQuery) =>
-            clientQuery.Client;
+        internal static ClientBase GetClient(this IClientQuery clientQuery) =>
+            clientQuery.Client ?? throw new Exception("Client not set.");
 
         internal static void SetClient(this IClientQuery clientQuery, ClientBase client) =>
             clientQuery.Client = client;
 
         internal static void CopyClientFrom(this IClientQuery clientQuery, IClientQuery from) =>
-            clientQuery.Client = from.Client;
+            clientQuery.Client = from.Client ?? throw new Exception("Client not set.");
 
         /// <summary>
         /// Selects one or more fields from the source type <typeparamref name="T"/>, resulting in type <typeparamref name="TResult"/>.

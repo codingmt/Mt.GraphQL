@@ -300,7 +300,7 @@ namespace Mt.GraphQL.Api
             var items = new List<Expression>();
             while (true)
             {
-                if (!ReadConstant(related, out var constant))
+                if (!ReadConstant(related, out var constant) || constant == null)
                     throw new QueryParseException(_filter, $"Expected constant at position {_position}");
                 items.Add(constant);
 

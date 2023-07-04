@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GraphQL.Api.Client\GraphQL.Api.Client.csproj" />
     <ProjectReference Include="..\GraphQL.Api\GraphQL.Api.csproj" />
   </ItemGroup>
 

@@ -26,12 +26,27 @@ namespace Mt.GraphQL.Api
         /// <typeparam name="TQuery">The type of <see cref="Query{T}"/>.</typeparam>
         public override TQuery Clone<TQuery>()
         {
-            var result = base.Clone<TQuery>();
+            var qType = typeof(TQuery);
+            if (typeof(Query<,>) == qType.GetGenericTypeDefinition()) 
+            {
+                var newType = typeof(ClientQuery<,>).MakeGenericType(qType.GetGenericArguments());
+                var result = (TQuery)Activator.CreateInstance(newType);
+                CopyPropertiesTo(result);
+                return result;
+            }
 
-            if (result is ClientQuery<T> cq)
+            return base.Clone<TQuery>();
+        }
+
+        /// <summary>
+        /// Copies the querie's properties to <paramref name="destination"/>.
+        /// </summary>
+        /// <param name="destination">The object to copy the properties to.</param>
+        protected override void CopyPropertiesTo(Query<T> destination)
+        {
+            base.CopyPropertiesTo(destination);
+            if (destination is IClientQuery cq)
                 cq.CopyClientFrom(this);
-
-            return result;
         }
 
         public async Task<List<T>?> ToListAsync() =>
@@ -52,17 +67,14 @@ namespace Mt.GraphQL.Api
         ClientBase? IClientQuery.Client { get; set; }
 
         /// <summary>
-        /// Clones the instance.
+        /// Copies the querie's properties to <paramref name="destination"/>.
         /// </summary>
-        /// <typeparam name="TQuery">The type of <see cref="Query{T, TResult}"/>.</typeparam>
-        public override TQuery Clone<TQuery>()
+        /// <param name="destination">The object to copy the properties to.</param>
+        protected override void CopyPropertiesTo(Query<T> destination)
         {
-            var result = base.Clone<TQuery>();
-
-            if (result is ClientQuery<T, TResult> cq)
+            base.CopyPropertiesTo(destination);
+            if (destination is IClientQuery cq)
                 cq.CopyClientFrom(this);
-
-            return result;
         }
 
         public async Task<List<TResult>?> ToListAsync() =>

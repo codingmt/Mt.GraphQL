@@ -50,5 +50,9 @@ namespace Mt.GraphQL.Api.Test
 
         public static string ToJson(this IEnumerable source) =>
             JArray.FromObject(source).ToString();
+
+        public static T? CastIfNotNull<T>(this string? value)
+            where T: struct =>
+            value == null ? null : (T)Convert.ChangeType(value, typeof(T));
     }
 }

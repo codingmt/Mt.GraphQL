@@ -55,12 +55,21 @@ namespace Mt.GraphQL.Api
                     ? myType
                     : typeof(TQuery));
 
-            result.Expressions.SelectExpression = Expressions.SelectExpression;
-            result.Expressions.FilterExpression = Expressions.FilterExpression;
-            result.Skip = Skip;
-            result.Take = Take;
+            this.CopyPropertiesTo(result);
 
             return result;
+        }
+
+        /// <summary>
+        /// Copies the querie's properties to <paramref name="destination"/>.
+        /// </summary>
+        /// <param name="destination">The object to copy the properties to.</param>
+        protected virtual void CopyPropertiesTo(Query<T> destination)
+        {
+            destination.Expressions.SelectExpression = Expressions.SelectExpression;
+            destination.Expressions.FilterExpression = Expressions.FilterExpression;
+            destination.Skip = Skip;
+            destination.Take = Take;
         }
 
         /// <summary>
@@ -132,5 +141,16 @@ namespace Mt.GraphQL.Api
         where T : class
     {
         internal Func<JToken, TResult>? ResultMapping { get; set; }
+
+        /// <summary>
+        /// Copies the querie's properties to <paramref name="destination"/>.
+        /// </summary>
+        /// <param name="destination">The object to copy the properties to.</param>
+        protected override void CopyPropertiesTo(Query<T> destination)
+        {
+            base.CopyPropertiesTo(destination);
+            if (destination is Query<T, TResult> q)
+                q.ResultMapping = ResultMapping;
+        }
     }
 }

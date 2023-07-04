@@ -1,3 +1,5 @@
+using System.Web;
+
 namespace Mt.GraphQL.Api.Test
 {
     public class FullTests
@@ -12,32 +14,27 @@ namespace Mt.GraphQL.Api.Test
             new Entity { Id = 6, Name= "F", Description = "Entity F", Related = new Entity{ Name = "Related to F" } }
         };
 
+        private TestClient _client;
+
         [SetUp]
         public void Setup()
         {
+            _client = new TestClient();
         }
 
         [Test]
-        public void TestAnonymousClass()
+        public async Task TestAnonymousClass()
         {
-            var clientQuery = new Query<Entity>()
+            var clientQuery = _client.Set
                 .Select(x => new { x.Id, EntityName = x.Name, RelatedName = x.Related.Name })
                 .Where(x => x.Description.Contains("Entity"))
                 .Skip(1)
                 .Take(2);
             Assert.That(clientQuery.ToString(), Is.EqualTo("select=Id,Name,Related.Name&filter=contains(Description,'Entity')&skip=1&take=2"));
 
-            var serverQuery = new Query<Entity>
-            {
-                Filter = clientQuery.Filter,
-                Select = clientQuery.Select,
-                Skip = clientQuery.Skip,
-                Take = clientQuery.Take
-            };
-            var serverResult = _set.Apply(serverQuery);
+            var result = await clientQuery.ToArrayAsync();
 
-            var json = serverResult.ToJson();
-            Assert.That(json, Is.EqualTo(@"[
+            Assert.That(_client.Json, Is.EqualTo(@"[
   {
     ""Id"": 2,
     ""Name"": ""B"",
@@ -49,8 +46,6 @@ namespace Mt.GraphQL.Api.Test
     ""Related_Name"": ""Related to E""
   }
 ]"));
-
-            var result = clientQuery.ParseJson(json);
 
             Assert.Multiple(() =>
             {
@@ -65,29 +60,20 @@ namespace Mt.GraphQL.Api.Test
         }
 
         [Test]
-        public void TestSingleMemberLiteral()
+        public async Task TestSingleMemberLiteral()
         {
-            var clientQuery = new Query<Entity>()
+            var clientQuery = _client.Set
                 .Select(x => x.Id)
                 .Where(x => x.Description.Contains("Entiteit"))
                 .Take(1);
             Assert.That(clientQuery.ToString(), Is.EqualTo("select=Id&filter=contains(Description,'Entiteit')&take=1"));
 
-            var serverQuery = new Query<Entity>
-            {
-                Filter = clientQuery.Filter,
-                Select = clientQuery.Select,
-                Skip = clientQuery.Skip,
-                Take = clientQuery.Take
-            };
-            var serverResult = _set.Apply(serverQuery);
+            var result = await clientQuery.ToArrayAsync();
 
-            var json = serverResult.ToJson();
-            Assert.That(json, Is.EqualTo(@"[
+            Assert.That(_client.Json, Is.EqualTo(@"[
   3
 ]"));
 
-            var result = clientQuery.ParseJson(json);
             Assert.Multiple(() =>
             {
                 Assert.That(result, Is.Not.Null);
@@ -97,24 +83,16 @@ namespace Mt.GraphQL.Api.Test
         }
 
         [Test]
-        public void TestSingleMemberObject()
+        public async Task TestSingleMemberObject()
         {
-            var clientQuery = new Query<Entity>()
+            var clientQuery = _client.Set
                 .Select(x => x.Related)
                 .Where(x => x.Description.Contains("Entiteit"));
             Assert.That(clientQuery.ToString(), Is.EqualTo("select=Related&filter=contains(Description,'Entiteit')"));
 
-            var serverQuery = new Query<Entity>
-            {
-                Filter = clientQuery.Filter,
-                Select = clientQuery.Select,
-                Skip = clientQuery.Skip,
-                Take = clientQuery.Take
-            };
-            var serverResult = _set.Apply(serverQuery);
+            var result = await clientQuery.ToArrayAsync();
 
-            var json = serverResult.ToJson();
-            Assert.That(json, Is.EqualTo(@"[
+            Assert.That(_client.Json, Is.EqualTo(@"[
   {
     ""Id"": 0,
     ""Name"": ""Related to C"",
@@ -127,7 +105,6 @@ namespace Mt.GraphQL.Api.Test
   null
 ]"));
 
-            var result = clientQuery.ParseJson(json);
             Assert.Multiple(() =>
             {
                 Assert.That(result, Is.Not.Null);
@@ -135,6 +112,33 @@ namespace Mt.GraphQL.Api.Test
                 Assert.That(result[0].Name, Is.EqualTo("Related to C"));
                 Assert.That(result[1], Is.Null);
             });
+        }
+
+        private class TestClient : ClientBase
+        {
+            public string? Json { get; private set; }
+
+            public TestClient()
+            {
+                Configuration.Url = "https://localhost";
+                Configuration.ProcessRequestHandler = ProcessRequest;
+            }
+
+            private Task<string> ProcessRequest(Configuration configuration, HttpRequestMessage httpRequestMessage)
+            {
+                var parameters = HttpUtility.ParseQueryString(httpRequestMessage.RequestUri?.Query ?? throw new Exception("No URI or querystring."));
+                var query = new Query<Entity>
+                {
+                    Filter = parameters["filter"],
+                    Select = parameters["select"],
+                    Skip = parameters["skip"].CastIfNotNull<int>(),
+                    Take = parameters["take"].CastIfNotNull<int>()
+                };
+                Json = _set.Apply(query).ToJson();
+                return Task.FromResult(Json);
+            }
+
+            public ClientQuery<Entity> Set => CreateQuery<Entity>();
         }
     }
 }

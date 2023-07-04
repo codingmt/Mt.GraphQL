@@ -40,9 +40,9 @@ namespace System.Collections.Generic
         /// <typeparam name="T">The type of <see cref="IEnumerable{T}"/> <paramref name="source"/>.</typeparam>
         /// <param name="source">The source to apply the <paramref name="query"/> to.</param>
         /// <param name="query">The query to apply to the <paramref name="source"/>.</param>
-        public static IEnumerable<T> Apply<T>(this IEnumerable<T> source, Query<T> query)
+        public static IEnumerable Apply<T>(this IEnumerable<T> source, Query<T> query)
             where T : class => 
-            (IEnumerable<T>)InnerApply(source, query);
+            InnerApply(source, query);
 
         private static IEnumerable InnerApply<T>(IEnumerable<T> source, Query<T> query)
             where T : class

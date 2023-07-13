@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <ProjectReference Include="..\GraphQL.Internal\GraphQL.Internal.csproj" />
   </ItemGroup>
 
 </Project>

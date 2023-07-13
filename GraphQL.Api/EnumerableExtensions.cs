@@ -1,4 +1,5 @@
 ﻿using Mt.GraphQL.Api;
+using Mt.GraphQL.Internal;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -64,7 +65,7 @@ namespace System.Collections.Generic
             where T : class => 
             InnerApply(source, query);
 
-        private static IEnumerable InnerApply<T>(IEnumerable<T> source, Query<T> query)
+        private static IEnumerable InnerApply<T>(IEnumerable<T> source, IQueryInternal<T> query)
             where T : class
         {
             IEnumerable result = source;

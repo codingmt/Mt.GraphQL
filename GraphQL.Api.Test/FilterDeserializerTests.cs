@@ -15,9 +15,7 @@ namespace Mt.GraphQL.Api.Test
         [TestCase("Id in 1, 2,3", "x => new [] {1, 2, 3}.Contains(x.Id)")]
         public void TestSimpleComparisons(string filter, string expectedExpression)
         {
-#if DEBUG
             Filter(filter).HasFilterExpression(expectedExpression);
-#endif
         }
 
         [Test]
@@ -35,9 +33,7 @@ namespace Mt.GraphQL.Api.Test
             "x => (((x.Id > 3) AndAlso x.Description.Contains(\"A\", OrdinalIgnoreCase)) OrElse x.Description.EndsWith(\"B\", OrdinalIgnoreCase))")]
         public void TestCompositeFilters(string filter, string expectedExpression)
         {
-#if DEBUG
             Filter(filter).HasFilterExpression(expectedExpression);
-#endif
         }
 
         [Test]

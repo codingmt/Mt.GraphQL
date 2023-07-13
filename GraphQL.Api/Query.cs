@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Mt.GraphQL.Internal;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Linq.Expressions;
 using System.Text;
@@ -9,16 +10,18 @@ namespace Mt.GraphQL.Api
     /// Query to apply to a set of <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type of items in the set.</typeparam>
-    public class Query<T>
+    public class Query<T> : IQueryInternal<T>
         where T : class
     {
+        private readonly QueryExpressions<T> _expressions = new QueryExpressions<T>();
+
         /// <summary>
         /// The fields to select from type <typeparamref name="T"/>.
         /// </summary>
         public string? Select
         {
-            get => Expressions.GetSelect();
-            set => Expressions.ParseSelect(value ?? string.Empty);
+            get => _expressions.GetSelect();
+            set => _expressions.ParseSelect(value ?? string.Empty);
         }
 
         /// <summary>
@@ -26,8 +29,8 @@ namespace Mt.GraphQL.Api
         /// </summary>
         public string? Filter
         {
-            get => Expressions.GetFilter();
-            set => Expressions.ParseFilter(value ?? string.Empty);
+            get => _expressions.GetFilter();
+            set => _expressions.ParseFilter(value ?? string.Empty);
         }
 
         /// <summary>
@@ -35,8 +38,8 @@ namespace Mt.GraphQL.Api
         /// </summary>
         public string? OrderBy 
         { 
-            get => Expressions.GetOrderBy(); 
-            set => Expressions.ParseOrderBy(value ?? string.Empty); 
+            get => _expressions.GetOrderBy(); 
+            set => _expressions.ParseOrderBy(value ?? string.Empty); 
         }
 
         /// <summary>
@@ -49,14 +52,20 @@ namespace Mt.GraphQL.Api
         /// </summary>
         public int? Take { get; set; }
 
-        internal QueryExpressions<T> Expressions { get; } = new QueryExpressions<T>();
+        QueryExpressions<T> IQueryInternal<T>.Expressions => _expressions;
 
         /// <summary>
         /// Clones the instance.
         /// </summary>
         /// <typeparam name="TQuery">The type of <see cref="Query{T}"/>.</typeparam>
-        public virtual TQuery Clone<TQuery>()
-            where TQuery : Query<T>, new()
+        TQuery IQueryInternal<T>.Clone<TQuery>() => CloneInternal<TQuery>();
+
+        /// <summary>
+        /// Clones the instance.
+        /// </summary>
+        /// <typeparam name="TQuery">The type of <see cref="Query{T}"/>.</typeparam>
+        protected virtual TQuery CloneInternal<TQuery>()
+            where TQuery : IQueryInternal<T>, new()
         {
             var myType = GetType();
             var result = (TQuery)Activator.CreateInstance(
@@ -73,11 +82,11 @@ namespace Mt.GraphQL.Api
         /// Copies the querie's properties to <paramref name="destination"/>.
         /// </summary>
         /// <param name="destination">The object to copy the properties to.</param>
-        protected virtual void CopyPropertiesTo(Query<T> destination)
+        protected virtual void CopyPropertiesTo(IQueryInternal<T> destination)
         {
-            destination.Expressions.SelectExpression = Expressions.SelectExpression;
-            destination.Expressions.FilterExpression = Expressions.FilterExpression;
-            destination.Expressions.OrderBy.AddRange(Expressions.OrderBy);
+            destination.Expressions.SelectExpression = _expressions.SelectExpression;
+            destination.Expressions.FilterExpression = _expressions.FilterExpression;
+            destination.Expressions.OrderBy.AddRange(_expressions.OrderBy);
             destination.Skip = Skip;
             destination.Take = Take;
         }
@@ -141,13 +150,6 @@ namespace Mt.GraphQL.Api
         /// Operator to implicitly convert the <see cref="Query{T}"/> to a <see cref="string"/>.
         /// </summary>
         public static implicit operator string(Query<T> from) => from.ToString();
-
-#if DEBUG
-        /// <summary>
-        /// Public reference to <see cref="FilterExpression"/> for use by tests.
-        /// </summary>
-        public Expression? FilterExpression => Expressions.FilterExpression;
-#endif
     }
 
     /// <summary>
@@ -155,20 +157,20 @@ namespace Mt.GraphQL.Api
     /// </summary>
     /// <typeparam name="T">The type of items in the set.</typeparam>
     /// <typeparam name="TResult">The resulting type.</typeparam>
-    public class Query<T, TResult> : Query<T>
+    public class Query<T, TResult> : Query<T>, IQueryInternal<T, TResult>
         where T : class
     {
-        internal Func<JToken, TResult>? ResultMapping { get; set; }
+        Func<JToken, TResult>? IQueryInternal<T, TResult>.ResultMapping { get; set; }
 
         /// <summary>
         /// Copies the querie's properties to <paramref name="destination"/>.
         /// </summary>
         /// <param name="destination">The object to copy the properties to.</param>
-        protected override void CopyPropertiesTo(Query<T> destination)
+        protected override void CopyPropertiesTo(IQueryInternal<T> destination)
         {
             base.CopyPropertiesTo(destination);
             if (destination is Query<T, TResult> q)
-                q.ResultMapping = ResultMapping;
+                q.AsQueryInternal().ResultMapping = this.AsQueryInternal().ResultMapping;
         }
     }
 }

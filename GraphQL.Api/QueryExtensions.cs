@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Mt.GraphQL.Internal;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -24,9 +25,9 @@ namespace Mt.GraphQL.Api
             var validator = new SelectSerializer<T, TResult>(selection);
 
             // Create result
-            var result = query.Clone<Query<T, TResult>>();
-            result.Expressions.SelectExpression = selection;
-            result.ResultMapping = validator.ResultMapping;
+            var result = query.AsQueryInternal().Clone<Query<T, TResult>>();
+            result.AsQueryInternal().Expressions.SelectExpression = selection;
+            result.AsQueryInternal().ResultMapping = validator.ResultMapping;
             return result;
         }
 
@@ -44,8 +45,8 @@ namespace Mt.GraphQL.Api
             new FilterSerializer<T>(condition);
 
             // Create result
-            var result = query.Clone<Query<T, TResult>>();
-            result.Expressions.FilterExpression = condition;
+            var result = query.AsQueryInternal().Clone<Query<T, TResult>>();
+            result.AsQueryInternal().Expressions.FilterExpression = condition;
             return result;
         }
 
@@ -62,8 +63,8 @@ namespace Mt.GraphQL.Api
             new FilterSerializer<T>(condition);
 
             // Create result
-            var result = query.Clone<Query<T>>();
-            result.Expressions.FilterExpression = condition;
+            var result = query.AsQueryInternal().Clone<Query<T>>();
+            result.AsQueryInternal().Expressions.FilterExpression = condition;
             return result;
         }
 
@@ -78,8 +79,8 @@ namespace Mt.GraphQL.Api
         public static Query<T, TResult> OrderBy<T, TResult, TMember>(this Query<T, TResult> query, Expression<Func<T, TMember>> member)
             where T : class
         {
-            var result = query.Clone<Query<T, TResult>>();
-            result.Expressions.OrderBy.Add((member, false));
+            var result = query.AsQueryInternal().Clone<Query<T, TResult>>();
+            result.AsQueryInternal().Expressions.OrderBy.Add((member, false));
             return result;
         }
 
@@ -93,8 +94,8 @@ namespace Mt.GraphQL.Api
         public static Query<T> OrderBy<T, TMember>(this Query<T> query, Expression<Func<T, TMember>> member)
             where T : class
         {
-            var result = query.Clone<Query<T>>();
-            result.Expressions.OrderBy.Add((member, false));
+            var result = query.AsQueryInternal().Clone<Query<T>>();
+            result.AsQueryInternal().Expressions.OrderBy.Add((member, false));
             return result;
         }
 
@@ -109,8 +110,8 @@ namespace Mt.GraphQL.Api
         public static Query<T, TResult> OrderByDescending<T, TResult, TMember>(this Query<T, TResult> query, Expression<Func<T, TMember>> member)
             where T : class
         {
-            var result = query.Clone<Query<T, TResult>>();
-            result.Expressions.OrderBy.Add((member, true));
+            var result = query.AsQueryInternal().Clone<Query<T, TResult>>();
+            result.AsQueryInternal().Expressions.OrderBy.Add((member, true));
             return result;
         }
 
@@ -124,8 +125,8 @@ namespace Mt.GraphQL.Api
         public static Query<T> OrderByDescending<T, TMember>(this Query<T> query, Expression<Func<T, TMember>> member)
             where T : class
         {
-            var result = query.Clone<Query<T>>();
-            result.Expressions.OrderBy.Add((member, true));
+            var result = query.AsQueryInternal().Clone<Query<T>>();
+            result.AsQueryInternal().Expressions.OrderBy.Add((member, true));
             return result;
         }
 
@@ -139,7 +140,7 @@ namespace Mt.GraphQL.Api
         public static Query<T, TResult> Skip<T, TResult>(this Query<T, TResult> query, int skip)
             where T : class
         {
-            var result = query.Clone<Query<T, TResult>>();
+            var result = query.AsQueryInternal().Clone<Query<T, TResult>>();
             result.Skip = skip;
             return result;
         }
@@ -153,7 +154,7 @@ namespace Mt.GraphQL.Api
         public static Query<T> Skip<T>(this Query<T> query, int skip)
             where T : class
         {
-            var result = query.Clone<Query<T>>();
+            var result = query.AsQueryInternal().Clone<Query<T>>();
             result.Skip = skip;
             return result;
         }
@@ -168,7 +169,7 @@ namespace Mt.GraphQL.Api
         public static Query<T, TResult> Take<T, TResult>(this Query<T, TResult> query, int take)
             where T : class
         {
-            var result = query.Clone<Query<T, TResult>>();
+            var result = query.AsQueryInternal().Clone<Query<T, TResult>>();
             result.Take = take;
             return result;
         }
@@ -182,7 +183,7 @@ namespace Mt.GraphQL.Api
         public static Query<T> Take<T>(this Query<T> query, int take)
             where T : class
         {
-            var result = query.Clone<Query<T>>();
+            var result = query.AsQueryInternal().Clone<Query<T>>();
             result.Take = take;
             return result;
         }
@@ -198,11 +199,11 @@ namespace Mt.GraphQL.Api
         public static TResult[]? ParseJson<T, TResult>(this Query<T, TResult> query, string json)
             where T : class
         {
-            var resultMapping = query.ResultMapping;
+            var resultMapping = query.AsQueryInternal().ResultMapping;
             if (resultMapping == null)
             {
                 var visitor = new SelectSerializer<T, TResult>(
-                    query.Expressions?.SelectExpression 
+                    query.AsQueryInternal().Expressions?.SelectExpression 
                     ?? throw new Exception("No Select expression present"));
                 resultMapping = visitor.ResultMapping;
             }

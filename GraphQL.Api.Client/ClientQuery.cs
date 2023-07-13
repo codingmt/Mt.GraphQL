@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Mt.GraphQL.Internal;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +25,7 @@ namespace Mt.GraphQL.Api
         /// Clones the instance.
         /// </summary>
         /// <typeparam name="TQuery">The type of <see cref="Query{T}"/>.</typeparam>
-        public override TQuery Clone<TQuery>()
+        protected override TQuery CloneInternal<TQuery>()
         {
             var qType = typeof(TQuery);
             if (typeof(Query<,>) == qType.GetGenericTypeDefinition()) 
@@ -35,14 +36,14 @@ namespace Mt.GraphQL.Api
                 return result;
             }
 
-            return base.Clone<TQuery>();
+            return base.CloneInternal<TQuery>();
         }
 
         /// <summary>
         /// Copies the querie's properties to <paramref name="destination"/>.
         /// </summary>
         /// <param name="destination">The object to copy the properties to.</param>
-        protected override void CopyPropertiesTo(Query<T> destination)
+        protected override void CopyPropertiesTo(IQueryInternal<T> destination)
         {
             base.CopyPropertiesTo(destination);
             if (destination is IClientQuery cq)
@@ -76,7 +77,7 @@ namespace Mt.GraphQL.Api
         /// Copies the querie's properties to <paramref name="destination"/>.
         /// </summary>
         /// <param name="destination">The object to copy the properties to.</param>
-        protected override void CopyPropertiesTo(Query<T> destination)
+        protected override void CopyPropertiesTo(IQueryInternal<T> destination)
         {
             base.CopyPropertiesTo(destination);
             if (destination is IClientQuery cq)

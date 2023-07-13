@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Linq.Expressions;
+using Mt.GraphQL.Internal;
 
 namespace Mt.GraphQL.Api.Test
 {
@@ -22,12 +23,9 @@ namespace Mt.GraphQL.Api.Test
         public static void HasFilterExpression(this Func<Query<Entity>> queryCreator, string expression)
         {
             var query = queryCreator();
-#if DEBUG
-            if (query.FilterExpression?.ToString() != expression)
-                throw new Exception($"Mismatch!\nExpected: {expression}\nActually: {query.FilterExpression?.ToString()}");
-#else
-            throw new Exception($"{nameof(TestHelpers)}.{nameof(HasFilterExpression)} can only be used in DEBUG mode.");
-#endif
+            var filterExpression = query.AsQueryInternal().Expressions.FilterExpression;
+            if (filterExpression?.ToString() != expression)
+                throw new Exception($"Mismatch!\nExpected: {expression}\nActually: {filterExpression?.ToString()}");
         }
 
         public static void Throws(this Func<Query<Entity>> queryCreator, string? exceptionType = null, string? message = null)

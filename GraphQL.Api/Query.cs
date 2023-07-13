@@ -31,6 +31,15 @@ namespace Mt.GraphQL.Api
         }
 
         /// <summary>
+        /// The fields of type <typeparamref name="T"/> to order the resulting set by.
+        /// </summary>
+        public string? OrderBy 
+        { 
+            get => Expressions.GetOrderBy(); 
+            set => Expressions.ParseOrderBy(value ?? string.Empty); 
+        }
+
+        /// <summary>
         /// The number of items to skip.
         /// </summary>
         public int? Skip { get; set; }
@@ -55,7 +64,7 @@ namespace Mt.GraphQL.Api
                     ? myType
                     : typeof(TQuery));
 
-            this.CopyPropertiesTo(result);
+            CopyPropertiesTo(result);
 
             return result;
         }
@@ -68,6 +77,7 @@ namespace Mt.GraphQL.Api
         {
             destination.Expressions.SelectExpression = Expressions.SelectExpression;
             destination.Expressions.FilterExpression = Expressions.FilterExpression;
+            destination.Expressions.OrderBy.AddRange(Expressions.OrderBy);
             destination.Skip = Skip;
             destination.Take = Take;
         }
@@ -102,6 +112,14 @@ namespace Mt.GraphQL.Api
                 if (sb.Length > 0)
                     sb.Append('&');
                 sb.Append($"filter={filter}");
+            }
+
+            var orderBy = OrderBy;
+            if (!string.IsNullOrWhiteSpace(orderBy))
+            {
+                if (sb.Length > 0)
+                    sb.Append('&');
+                sb.Append($"orderBy={orderBy}");
             }
 
             if (Skip.HasValue)

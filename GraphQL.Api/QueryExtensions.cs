@@ -68,6 +68,68 @@ namespace Mt.GraphQL.Api
         }
 
         /// <summary>
+        /// Orders the set ascending.
+        /// </summary>
+        /// <typeparam name="T">The type of source entity.</typeparam>
+        /// <typeparam name="TResult">The type of selection.</typeparam>
+        /// <typeparam name="TMember">The type of meber to order by.</typeparam>
+        /// <param name="query">The <see cref="Query{T, TResult}"/> to apply the ordering to.</param>
+        /// <param name="member">A <see cref="LambdaExpression"/> selecting the member to order by.</param>
+        public static Query<T, TResult> OrderBy<T, TResult, TMember>(this Query<T, TResult> query, Expression<Func<T, TMember>> member)
+            where T : class
+        {
+            var result = query.Clone<Query<T, TResult>>();
+            result.Expressions.OrderBy.Add((member, false));
+            return result;
+        }
+
+        /// <summary>
+        /// Orders the set ascending.
+        /// </summary>
+        /// <typeparam name="T">The type of source entity.</typeparam>
+        /// <typeparam name="TMember">The type of meber to order by.</typeparam>
+        /// <param name="query">The <see cref="Query{T}"/> to apply the ordering to.</param>
+        /// <param name="member">A <see cref="LambdaExpression"/> selecting the member to order by.</param>
+        public static Query<T> OrderBy<T, TMember>(this Query<T> query, Expression<Func<T, TMember>> member)
+            where T : class
+        {
+            var result = query.Clone<Query<T>>();
+            result.Expressions.OrderBy.Add((member, false));
+            return result;
+        }
+
+        /// <summary>
+        /// Orders the set descending.
+        /// </summary>
+        /// <typeparam name="T">The type of source entity.</typeparam>
+        /// <typeparam name="TResult">The type of selection.</typeparam>
+        /// <typeparam name="TMember">The type of meber to order by.</typeparam>
+        /// <param name="query">The <see cref="Query{T, TResult}"/> to apply the ordering to.</param>
+        /// <param name="member">A <see cref="LambdaExpression"/> selecting the member to order by.</param>
+        public static Query<T, TResult> OrderByDescending<T, TResult, TMember>(this Query<T, TResult> query, Expression<Func<T, TMember>> member)
+            where T : class
+        {
+            var result = query.Clone<Query<T, TResult>>();
+            result.Expressions.OrderBy.Add((member, true));
+            return result;
+        }
+
+        /// <summary>
+        /// Orders the set descending.
+        /// </summary>
+        /// <typeparam name="T">The type of source entity.</typeparam>
+        /// <typeparam name="TMember">The type of meber to order by.</typeparam>
+        /// <param name="query">The <see cref="Query{T}"/> to apply the ordering to.</param>
+        /// <param name="member">A <see cref="LambdaExpression"/> selecting the member to order by.</param>
+        public static Query<T> OrderByDescending<T, TMember>(this Query<T> query, Expression<Func<T, TMember>> member)
+            where T : class
+        {
+            var result = query.Clone<Query<T>>();
+            result.Expressions.OrderBy.Add((member, true));
+            return result;
+        }
+
+        /// <summary>
         /// Skips <paramref name="skip"/> items.
         /// </summary>
         /// <typeparam name="T">The type of source entity.</typeparam>

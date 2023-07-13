@@ -28,34 +28,36 @@ namespace Mt.GraphQL.Api.Test
             var clientQuery = _client.Set
                 .Select(x => new { x.Id, EntityName = x.Name, RelatedName = x.Related.Name })
                 .Where(x => x.Description.Contains("Entity"))
+                .OrderByDescending(x => x.Id)
+                .OrderBy(x => x.Name)
                 .Skip(1)
                 .Take(2);
-            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Id,Name,Related.Name&filter=contains(Description,'Entity')&skip=1&take=2"));
+            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Id,Name,Related.Name&filter=contains(Description,'Entity')&orderBy=Id desc,Name&skip=1&take=2"));
 
             var result = await clientQuery.ToArrayAsync();
 
             Assert.That(_client.Json, Is.EqualTo(@"[
   {
-    ""Id"": 2,
-    ""Name"": ""B"",
-    ""Related_Name"": ""Related to B""
-  },
-  {
     ""Id"": 5,
     ""Name"": ""E"",
     ""Related_Name"": ""Related to E""
+  },
+  {
+    ""Id"": 2,
+    ""Name"": ""B"",
+    ""Related_Name"": ""Related to B""
   }
 ]"));
 
             Assert.Multiple(() =>
             {
                 Assert.That(result, Has.Length.EqualTo(2));
-                Assert.That(result[0].Id, Is.EqualTo(2));
-                Assert.That(result[0].EntityName, Is.EqualTo("B"));
-                Assert.That(result[0].RelatedName, Is.EqualTo("Related to B"));
-                Assert.That(result[1].Id, Is.EqualTo(5));
-                Assert.That(result[1].EntityName, Is.EqualTo("E"));
-                Assert.That(result[1].RelatedName, Is.EqualTo("Related to E"));
+                Assert.That(result[0].Id, Is.EqualTo(5));
+                Assert.That(result[0].EntityName, Is.EqualTo("E"));
+                Assert.That(result[0].RelatedName, Is.EqualTo("Related to E"));
+                Assert.That(result[1].Id, Is.EqualTo(2));
+                Assert.That(result[1].EntityName, Is.EqualTo("B"));
+                Assert.That(result[1].RelatedName, Is.EqualTo("Related to B"));
             });
         }
 
@@ -131,6 +133,7 @@ namespace Mt.GraphQL.Api.Test
                 {
                     Filter = parameters["filter"],
                     Select = parameters["select"],
+                    OrderBy = parameters["orderBy"],
                     Skip = parameters["skip"].CastIfNotNull<int>(),
                     Take = parameters["take"].CastIfNotNull<int>()
                 };

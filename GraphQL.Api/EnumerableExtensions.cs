@@ -1,7 +1,7 @@
 ﻿using Mt.GraphQL.Api;
 using Mt.GraphQL.Internal;
-using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace System.Collections.Generic
@@ -11,38 +11,17 @@ namespace System.Collections.Generic
     /// </summary>
     public static class EnumerableExtensions
     {
-        private static readonly MethodInfo _selectMethod = typeof(Enumerable).GetMethods().Single(m =>
-            m.Name == nameof(Enumerable.Select) &&
-            m.GetParameters().Select(p => p.ParameterType.GetGenericTypeDefinition()).SequenceEqual(
-            new[] { typeof(IEnumerable<>), typeof(Func<,>) }))
-            ?? throw new Exception("Method Select not found.");
-        private static readonly MethodInfo _whereMethod = typeof(Enumerable).GetMethods().Single(m =>
-            m.Name == nameof(Enumerable.Where) &&
-            m.GetParameters().Select(p => p.ParameterType.GetGenericTypeDefinition()).SequenceEqual(
-            new[] { typeof(IEnumerable<>), typeof(Func<,>) }))
-            ?? throw new Exception("Method Where not found.");
-        private static readonly MethodInfo _orderByMethod = typeof(Enumerable).GetMethods().Single(m =>
-            m.Name == nameof(Enumerable.OrderBy) &&
-            m.GetParameters().Length == 2)
-            ?? throw new Exception("Method OrderBy not found.");
-        private static readonly MethodInfo _thenByMethod = typeof(Enumerable).GetMethods().Single(m =>
-            m.Name == nameof(Enumerable.ThenBy) &&
-            m.GetParameters().Length == 2)
-            ?? throw new Exception("Method ThenBy not found.");
-        private static readonly MethodInfo _orderByDescendingMethod = typeof(Enumerable).GetMethods().Single(m =>
-            m.Name == nameof(Enumerable.OrderByDescending) &&
-            m.GetParameters().Length == 2)
-            ?? throw new Exception("Method OrderByDescending not found.");
-        private static readonly MethodInfo _thenByDescendingMethod = typeof(Enumerable).GetMethods().Single(m =>
-            m.Name == nameof(Enumerable.ThenByDescending) &&
-            m.GetParameters().Length == 2)
-            ?? throw new Exception("Method ThenByDescending not found.");
-        private static readonly MethodInfo _skipMethod = typeof(Enumerable).GetMethods().First(m =>
-            m.Name == nameof(Enumerable.Skip) && m.IsPublic)
-            ?? throw new Exception("Method Skip not found.");
-        private static readonly MethodInfo _takeMethod = typeof(Enumerable).GetMethods().First(m =>
-            m.Name == nameof(Enumerable.Take) && m.IsPublic)
-            ?? throw new Exception("Method Take not found.");
+        private static readonly MethodInfo _selectMethod = GetMethodInfo(e => e.Select(x => x));
+        private static readonly MethodInfo _whereMethod = GetMethodInfo(e => e.Where(x => true));
+        private static readonly MethodInfo _orderByMethod = GetMethodInfo(e => e.OrderBy(x => 1));
+        private static readonly MethodInfo _thenByMethod = GetMethodInfo(e => e.OrderBy(x => 1).ThenBy(x => 1));
+        private static readonly MethodInfo _orderByDescendingMethod = GetMethodInfo(e => e.OrderByDescending(x => 1));
+        private static readonly MethodInfo _thenByDescendingMethod = GetMethodInfo(e => e.OrderBy(x => 1).ThenByDescending(x => 1));
+        private static readonly MethodInfo _skipMethod = GetMethodInfo(x => x.Skip(0));
+        private static readonly MethodInfo _takeMethod = GetMethodInfo(x => x.Take(0));
+
+        private static MethodInfo GetMethodInfo(Expression<Func<IEnumerable<object>, IEnumerable<object>>> method) =>
+            (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
 
         /// <summary>
         /// Apply the <paramref name="query"/> to the <paramref name="source"/>.

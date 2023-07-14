@@ -44,11 +44,11 @@ namespace Mt.GraphQL.Internal
         private string _filter = string.Empty;
         private int _position;
 
-        public LambdaExpression? Deserialize(string filter)
+        public LambdaExpression Deserialize(string filter)
         {
             _filter = filter?.Trim() ?? string.Empty;
             _position = 0;
-            Expression? result = null;
+            Expression result = null;
             while (_position < _filter.Length)
             {
                 result = ReadBooleanPart(result);
@@ -56,7 +56,7 @@ namespace Mt.GraphQL.Internal
             return result == null ? null : Expression.Lambda<Func<T, bool>>(result, _parameter);
         }
 
-        private Expression? ReadBooleanPart(Expression? related = null)
+        private Expression ReadBooleanPart(Expression related = null)
         {
             var result = related;
 
@@ -68,7 +68,7 @@ namespace Mt.GraphQL.Internal
             return result;
         }
 
-        private Expression? ReadPart(Expression? related = null)
+        private Expression ReadPart(Expression related = null)
         {
             if (_position >= _filter.Length)
                 return null;
@@ -81,7 +81,7 @@ namespace Mt.GraphQL.Internal
                     if (match.Success && match.Index == _position)
                     {
                         _position += match.Length;
-                        Expression? result = null;
+                        Expression result = null;
                         do
                         {
                             result = ReadBooleanPart(result);
@@ -94,7 +94,7 @@ namespace Mt.GraphQL.Internal
                             }
 
                             if (_position == _filter.Length)
-                                throw new QueryParseException(_filter, "Closing parenthesis not found");
+                                throw new QueryInternalException(_filter, "Closing parenthesis not found");
                         } while (true);
                     }
                 }
@@ -117,12 +117,12 @@ namespace Mt.GraphQL.Internal
                             }
 
                             var parameter = ReadPart(parameters.FirstOrDefault()) ??
-                                throw new QueryParseException(_filter, $"Could not parse parameter at position {_position}");
+                                throw new QueryInternalException(_filter, $"Could not parse parameter at position {_position}");
                             parameters.Add(parameter);
 
                             match = _functionParameterDelimiterRegex.Match(_filter, _position);
                             if (!match.Success || match.Index != _position)
-                                throw new QueryParseException(_filter, $"Expected delimiter or closing bracket at position {_position}");
+                                throw new QueryInternalException(_filter, $"Expected delimiter or closing bracket at position {_position}");
                             _position += match.Length;
                             if (match.Value.Trim() == ")")
                                 break;
@@ -132,22 +132,22 @@ namespace Mt.GraphQL.Internal
                         {
                             case "contains":
                                 if (parameters.Count != 2)
-                                    throw new QueryParseException(_filter, $"Expected 2 parameters for function '{functionName}'.");
+                                    throw new QueryInternalException(_filter, $"Expected 2 parameters for function '{functionName}'.");
                                 return Expression.Call(parameters[0], _stringContains, parameters[1], Expression.Constant(StringComparison.OrdinalIgnoreCase));
                             case "startswith":
                                 if (parameters.Count != 2)
-                                    throw new QueryParseException(_filter, $"Expected 2 parameters for function '{functionName}'.");
+                                    throw new QueryInternalException(_filter, $"Expected 2 parameters for function '{functionName}'.");
                                 return Expression.Call(parameters[0], _stringStartsWith, parameters[1], Expression.Constant(StringComparison.OrdinalIgnoreCase));
                             case "endswith":
                                 if (parameters.Count != 2)
-                                    throw new QueryParseException(_filter, $"Expected 2 parameters for function '{functionName}'.");
+                                    throw new QueryInternalException(_filter, $"Expected 2 parameters for function '{functionName}'.");
                                 return Expression.Call(parameters[0], _stringEndsWith, parameters[1], Expression.Constant(StringComparison.OrdinalIgnoreCase));
                             case "not":
                                 if (parameters.Count != 1 || parameters[0].Type != typeof(bool))
-                                    throw new QueryParseException(_filter, $"Expected 1 boolean parameter for function '{functionName}'.");
+                                    throw new QueryInternalException(_filter, $"Expected 1 boolean parameter for function '{functionName}'.");
                                 return Expression.Not(parameters[0]);
                             default:
-                                throw new QueryParseException(_filter, $"Unknown function '{functionName}'");
+                                throw new QueryInternalException(_filter, $"Unknown function '{functionName}'");
                         }
                     }
                 }
@@ -159,10 +159,10 @@ namespace Mt.GraphQL.Internal
                     {
                         var ownerType = typeof(T);
                         Expression result = _parameter;
-                        foreach (var member in match.Groups["member"].Value.Split("."))
+                        foreach (var member in match.Groups["member"].Value.Split(new[] { '.' }))
                         {
                             var property = ownerType.GetProperties().SingleOrDefault(p => p.Name == member)
-                                ?? throw new QueryParseException(_filter, $"Property {member} was not found on type {ownerType.Name}");
+                                ?? throw new QueryInternalException(_filter, $"Property {member} was not found on type {ownerType.Name}");
                             result = Expression.Property(result, property);
                             ownerType = property.PropertyType;
                         }
@@ -220,17 +220,17 @@ namespace Mt.GraphQL.Internal
                                 case "ge":
                                     return Expression.GreaterThanOrEqual(related, right);
                                 default:
-                                    throw new QueryParseException(_filter, $"Unknown operator {op}");
+                                    throw new QueryInternalException(_filter, $"Unknown operator {op}");
                             }
                         }
                     }
                 }
             }
 
-            throw new QueryParseException(_filter, $"Could not parse filter from position {_position}");
+            throw new QueryInternalException(_filter, $"Could not parse filter from position {_position}");
         }
 
-        private bool ReadConstant(Expression related, out Expression? constant)
+        private bool ReadConstant(Expression related, out Expression constant)
         {
             constant = null;
 
@@ -241,12 +241,12 @@ namespace Mt.GraphQL.Internal
             var type = ((related is MemberExpression memberExpression) ? memberExpression.Type
                 : (related is MethodCallExpression methodCallExpression) ? methodCallExpression.Method.ReturnType
                 : null)
-                ?? throw new QueryParseException(_filter, $"Could not determine data type at position {_position}");
+                ?? throw new QueryInternalException(_filter, $"Could not determine data type at position {_position}");
 
             try
             {
                 if (match.Groups["null"].Success)
-                    constant = Expression.Constant(null);
+                    constant = Expression.Constant(null, type);
                 else if (match.Groups["bool"].Success && (type == typeof(bool) || type == typeof(bool?)))
                     constant = Expression.Constant(match.Groups["bool"].Value.ToLower() == "true");
                 else if (match.Groups["number"].Success)
@@ -267,15 +267,15 @@ namespace Mt.GraphQL.Internal
                 else if (match.Groups["datetime"].Success && type != typeof(string))
                     constant = Expression.Constant(DateTime.ParseExact(match.Groups["datetime"].Value, @"\'yyyy-M-d\TH:mm:ss\'", null));
                 else if ((match.Groups["date"].Success || match.Groups["datetime"].Success || match.Groups["string"].Success) && type == typeof(string))
-                    constant = Expression.Constant(match.Value[1..^1].Replace("''", "'"));
+                    constant = Expression.Constant(match.Value.Substring(1, match.Value.Length - 2).Replace("''", "'"));
             }
             catch (Exception ex)
             {
-                throw new QueryParseException(_filter, $"Error parsing constant value {match.Value}", ex);
+                throw new QueryInternalException(_filter, $"Error parsing constant value {match.Value}", ex);
             }
 
             if (constant == null)
-                throw new QueryParseException(_filter, $"Could not parse {type.Name} constant with value: {match.Value}");
+                throw new QueryInternalException(_filter, $"Could not parse {type.Name} constant with value: {match.Value}");
 
             if (constant.Type != type)
                 constant = Expression.Convert(constant, type);
@@ -301,7 +301,7 @@ namespace Mt.GraphQL.Internal
             while (true)
             {
                 if (!ReadConstant(related, out var constant) || constant == null)
-                    throw new QueryParseException(_filter, $"Expected constant at position {_position}");
+                    throw new QueryInternalException(_filter, $"Expected constant at position {_position}");
                 items.Add(constant);
 
                 // next item?
@@ -320,7 +320,7 @@ namespace Mt.GraphQL.Internal
                 if (match.Success && match.Index == _position)
                     _position += match.Length;
                 else
-                    throw new QueryParseException(_filter, $"Expected closing parenthesis at position {_position}");
+                    throw new QueryInternalException(_filter, $"Expected closing parenthesis at position {_position}");
             }
 
             return Expression.NewArrayInit(related.Type, items.ToArray());

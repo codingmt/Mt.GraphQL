@@ -13,7 +13,7 @@ namespace Mt.GraphQL.Internal
 
     public interface IQueryInternal<T, TResult> : IQueryInternal<T>
     {
-        Func<JToken, TResult>? ResultMapping { get; set; }
+        Func<JToken, TResult> ResultMapping { get; set; }
     }
 
     public static class QueryInternalExtensions

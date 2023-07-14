@@ -24,6 +24,10 @@ namespace Mt.GraphQL.Internal
                 Members = newexp.Arguments
                     .Select(getMember)
                     .ToArray();
+            if (lambda.Body is MemberInitExpression memberInit)
+                Members = memberInit.Bindings
+                    .Select(b => b.Member.Name)
+                    .ToArray();
             else if (lambda.Body is MemberExpression member)
                 Members = new[] { getMember(member) };
             else
@@ -31,7 +35,7 @@ namespace Mt.GraphQL.Internal
 
             return node;
 
-            static string getMember(Expression exp)
+            string getMember(Expression exp)
             {
                 string selector = string.Empty;
                 while (exp is MemberExpression member)
@@ -46,7 +50,7 @@ namespace Mt.GraphQL.Internal
             }
         }
 
-        public override string ToString() => string.Join(',', Members);
+        public override string ToString() => string.Join(",", Members);
     }
 
     public class SelectSerializer<TFrom, TTo> : SelectSerializer<TFrom>
@@ -54,7 +58,7 @@ namespace Mt.GraphQL.Internal
         public SelectSerializer(Expression expression) : base(expression)
         { }
 
-        public Func<JToken, TTo>? ResultMapping { get; private set; }
+        public Func<JToken, TTo> ResultMapping { get; private set; }
 
         public override Expression Visit(Expression node)
         {
@@ -73,7 +77,7 @@ namespace Mt.GraphQL.Internal
             return result;
         }
 
-        private Func<JToken, TTo>? CreateResultMappingForAnonymousType()
+        private Func<JToken, TTo> CreateResultMappingForAnonymousType()
         {
             var properties = typeof(TTo).GetProperties();
             var constructor = typeof(TTo).GetConstructor(properties.Select(p => p.PropertyType).ToArray());
@@ -92,7 +96,7 @@ namespace Mt.GraphQL.Internal
                 (TTo)constructor.Invoke(getPropertyFunctions.Select(f => f(jToken)).ToArray());
         }
 
-        private Func<JToken, TTo>? CreateResultMappingForMember()
+        private Func<JToken, TTo> CreateResultMappingForMember()
         {
             #pragma warning disable CS8603 // Possible null reference return.
             if (typeof(TTo).IsClass)
@@ -102,7 +106,7 @@ namespace Mt.GraphQL.Internal
             #pragma warning restore CS8603 // Possible null reference return.
         }
 
-        private static Func<JToken, object?> CreateGetPropertyFunction<T>(string jsonMemberName) =>
+        private static Func<JToken, object> CreateGetPropertyFunction<T>(string jsonMemberName) =>
             #pragma warning disable CS8604 // Possible null reference argument.
             jToken => jToken[jsonMemberName].Value<T>();
             #pragma warning restore CS8604 // Possible null reference argument.

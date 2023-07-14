@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -8,8 +7,8 @@ namespace Mt.GraphQL.Internal
 {
     public class QueryExpressions
     {
-        public LambdaExpression? SelectExpression { get; set; }
-        public LambdaExpression? FilterExpression { get; set; }
+        public LambdaExpression SelectExpression { get; set; }
+        public LambdaExpression FilterExpression { get; set; }
         public List<(LambdaExpression member, bool descending)> OrderBy { get; } = new List<(LambdaExpression member, bool descending)>();
     }
 
@@ -26,11 +25,11 @@ namespace Mt.GraphQL.Internal
         public void ParseSelect(string expression)
         {
             var parameter = Expression.Parameter(typeof(T), "x");
-            var properties = expression.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            var properties = expression.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(propName =>
                 {
-                    var (expr, t) = ParseMemberExpression(propName, parameter);
-                    return new { expr, type = t, name = propName.Trim().Replace('.', '_') };
+                    var (expr, t) = ParseMemberExpression(ref propName, parameter);
+                    return new { expr, type = t, name = propName };
                 })
                 .ToArray();
             switch (properties.Length)
@@ -44,13 +43,15 @@ namespace Mt.GraphQL.Internal
                 default:
                     var type = TypeBuilder.GetType(properties.Select(p => (p.name, p.type)).ToArray());
                     SelectExpression = Expression.Lambda(
-                        Expression.New(type.GetConstructors().First(), properties.Select(x => x.expr.Body).ToArray()),
+                        Expression.MemberInit(
+                            Expression.New(type.GetConstructors().First()),
+                            properties.Select(p => Expression.Bind(type.GetProperty(p.name), p.expr.Body))),
                         parameter);
                     break;
             }
         }
 
-        public string? GetFilter()
+        public string GetFilter()
         {
             if (FilterExpression == null)
                 return string.Empty;
@@ -65,9 +66,8 @@ namespace Mt.GraphQL.Internal
                 : new FilterDeserializer<T>().Deserialize(filter);
         }
 
-        public string? GetOrderBy()
-        {
-            return string.Join(
+        public string GetOrderBy() =>
+            string.Join(
                 ",",
                 OrderBy.Select(
                     x =>
@@ -83,14 +83,13 @@ namespace Mt.GraphQL.Internal
                         }
                         return result + (x.descending ? " desc" : string.Empty);
                     }));
-        }
 
         public void ParseOrderBy(string orderBy)
         {
             var parameter = Expression.Parameter(typeof(T), "x");
             OrderBy.Clear();
             OrderBy.AddRange(
-                orderBy.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                orderBy.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(part =>
                     {
                         part = part.Trim();
@@ -98,28 +97,31 @@ namespace Mt.GraphQL.Internal
                         if (part.EndsWith(" desc", StringComparison.InvariantCultureIgnoreCase))
                         {
                             descending = true;
-                            part = part[..^5].Trim();
+                            part = part.Substring(0, part.Length - 5).Trim();
                         }
                         else if (part.EndsWith(" asc", StringComparison.InvariantCultureIgnoreCase))
-                            part = part[..^4].Trim();
+                            part = part.Substring(0, part.Length - 4).Trim();
 
-                        var (member, _) = ParseMemberExpression(part, parameter);
+                        var (member, _) = ParseMemberExpression(ref part, parameter);
                         return (member, descending);
                     }));
         }
 
-        private static (LambdaExpression expr, Type t) ParseMemberExpression(string memberExpression, ParameterExpression parameter)
+        private static (LambdaExpression expr, Type t) ParseMemberExpression(ref string memberExpression, ParameterExpression parameter)
         {
             memberExpression = memberExpression.Trim();
+            var normalizedMemberExpression = string.Empty;
             var t = typeof(T);
             Expression expr = parameter;
             foreach (var part in memberExpression.Split('.'))
             {
                 var prop = t.GetProperties().SingleOrDefault(x => x.Name.Equals(part, StringComparison.OrdinalIgnoreCase))
-                    ?? throw new QueryParseException(memberExpression, $"Could not parse expression; {part} not found");
+                    ?? throw new QueryInternalException(memberExpression, $"Could not parse expression; {part} not found");
                 expr = Expression.Property(expr, prop);
                 t = prop.PropertyType;
+                normalizedMemberExpression = $"{normalizedMemberExpression}.{prop.Name}";
             }
+            memberExpression = normalizedMemberExpression.Substring(1);
             return (Expression.Lambda(expr, parameter), t);
         }
     }

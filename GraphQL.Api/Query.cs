@@ -1,7 +1,8 @@
 ﻿using Mt.GraphQL.Internal;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http;
 using System.Text;
 
 namespace Mt.GraphQL.Api
@@ -18,28 +19,58 @@ namespace Mt.GraphQL.Api
         /// <summary>
         /// The fields to select from type <typeparamref name="T"/>.
         /// </summary>
-        public string? Select
+        public string Select
         {
             get => _expressions.GetSelect();
-            set => _expressions.ParseSelect(value ?? string.Empty);
+            set
+            {
+                try
+                {
+                    _expressions.ParseSelect(value ?? string.Empty);
+                }
+                catch (QueryInternalException ex)
+                {
+                    throw new QueryException(ex);
+                }
+            }
         }
 
         /// <summary>
         /// The filter to apply to the set of type <typeparamref name="T"/>.
         /// </summary>
-        public string? Filter
+        public string Filter
         {
             get => _expressions.GetFilter();
-            set => _expressions.ParseFilter(value ?? string.Empty);
+            set
+            {
+                try
+                {
+                    _expressions.ParseFilter(value ?? string.Empty);
+                }
+                catch (QueryInternalException ex)
+                {
+                    throw new QueryException(ex);
+                }
+            }
         }
 
         /// <summary>
         /// The fields of type <typeparamref name="T"/> to order the resulting set by.
         /// </summary>
-        public string? OrderBy 
-        { 
-            get => _expressions.GetOrderBy(); 
-            set => _expressions.ParseOrderBy(value ?? string.Empty); 
+        public string OrderBy
+        {
+            get => _expressions.GetOrderBy();
+            set
+            {
+                try
+                {
+                    _expressions.ParseOrderBy(value ?? string.Empty);
+                }
+                catch (QueryInternalException ex)
+                {
+                    throw new QueryException(ex);
+                }
+            }
         }
 
         /// <summary>
@@ -160,7 +191,7 @@ namespace Mt.GraphQL.Api
     public class Query<T, TResult> : Query<T>, IQueryInternal<T, TResult>
         where T : class
     {
-        Func<JToken, TResult>? IQueryInternal<T, TResult>.ResultMapping { get; set; }
+        Func<JToken, TResult> IQueryInternal<T, TResult>.ResultMapping { get; set; }
 
         /// <summary>
         /// Copies the querie's properties to <paramref name="destination"/>.

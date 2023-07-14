@@ -196,7 +196,7 @@ namespace Mt.GraphQL.Api
         /// <param name="query">The <see cref="Query{T, TResult}"/> used to request the received json.</param>
         /// <param name="json">The received json.</param>
         /// <returns>An array of <typeparamref name="TResult"/>.</returns>
-        public static TResult[]? ParseJson<T, TResult>(this Query<T, TResult> query, string json)
+        public static TResult[] ParseJson<T, TResult>(this Query<T, TResult> query, string json)
             where T : class
         {
             var resultMapping = query.AsQueryInternal().ResultMapping;

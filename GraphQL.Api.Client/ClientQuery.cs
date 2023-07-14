@@ -9,7 +9,7 @@ namespace Mt.GraphQL.Api
 {
     internal interface IClientQuery
     {
-        ClientBase? Client { get; set; }
+        ClientBase Client { get; set; }
     }
 
     /// <summary>
@@ -19,7 +19,7 @@ namespace Mt.GraphQL.Api
     public class ClientQuery<T> : Query<T>, IClientQuery
         where T : class
     {
-        ClientBase? IClientQuery.Client { get; set; }
+        ClientBase IClientQuery.Client { get; set; }
 
         /// <summary>
         /// Clones the instance.
@@ -53,13 +53,13 @@ namespace Mt.GraphQL.Api
         /// <summary>
         /// Get a list of results.
         /// </summary>
-        public async Task<List<T>?> ToListAsync() =>
+        public async Task<List<T>> ToListAsync() =>
             JsonConvert.DeserializeObject<List<T>>(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
 
         /// <summary>
         /// Get an array of results.
         /// </summary>
-        public async Task<T[]?> ToArrayAsync() =>
+        public async Task<T[]> ToArrayAsync() =>
             JsonConvert.DeserializeObject<T[]>(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
     }
 
@@ -71,7 +71,7 @@ namespace Mt.GraphQL.Api
     public class ClientQuery<T, TResult> : Query<T, TResult>, IClientQuery
         where T : class
     {
-        ClientBase? IClientQuery.Client { get; set; }
+        ClientBase IClientQuery.Client { get; set; }
 
         /// <summary>
         /// Copies the querie's properties to <paramref name="destination"/>.
@@ -87,13 +87,13 @@ namespace Mt.GraphQL.Api
         /// <summary>
         /// Get a list of results.
         /// </summary>
-        public async Task<List<TResult>?> ToListAsync() =>
+        public async Task<List<TResult>> ToListAsync() =>
             this.ParseJson(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString())).ToList();
 
         /// <summary>
         /// Get an array of results.
         /// </summary>
-        public async Task<TResult[]?> ToArrayAsync() =>
+        public async Task<TResult[]> ToArrayAsync() =>
             this.ParseJson(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
     }
 }

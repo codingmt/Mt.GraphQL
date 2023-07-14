@@ -33,7 +33,7 @@ namespace Mt.GraphQL.Internal
             var fields = new List<FieldInfo>();
             foreach (var (name, type) in properties)
             {
-                var fld = builder.DefineField($"_{name[..1].ToLower()}{name[1..]}", type, FieldAttributes.Private);
+                var fld = builder.DefineField($"_{name.Substring(0, 1).ToLower()}{name.Substring(1)}", type, FieldAttributes.Private);
                 fields.Add(fld);
                 var propBuilder = builder.DefineProperty(name, PropertyAttributes.HasDefault, type, new Type[0]);
                 var getMethodBuilder = builder.DefineMethod(
@@ -61,22 +61,7 @@ namespace Mt.GraphQL.Internal
                 propBuilder.SetSetMethod(setMethodBuilder);
             }
 
-            var ctor = builder.DefineConstructor(
-                MethodAttributes.Public,
-                CallingConventions.Standard,
-                properties.Select(p => p.type).ToArray());
-            {
-                var ilGen = ctor.GetILGenerator();
-                for (int i = 0; i < properties.Length; i++)
-                {
-                    ilGen.Emit(OpCodes.Ldarg_0);
-                    ilGen.Emit(OpCodes.Ldarg, i + 1);
-                    ilGen.Emit(OpCodes.Stfld, fields[i]);
-                }
-                ilGen.Emit(OpCodes.Ret);
-            }
-
-            return builder.CreateType();
+            return builder.CreateTypeInfo().AsType();
         }
     }
 }

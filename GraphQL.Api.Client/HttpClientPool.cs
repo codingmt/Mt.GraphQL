@@ -14,7 +14,7 @@ namespace Mt.GraphQL.Api
 
         internal static HttpClientLease GetHttpClient()
         {
-            HttpClient? client = null;
+            HttpClient client = null;
 
             lock (_lock)
             {

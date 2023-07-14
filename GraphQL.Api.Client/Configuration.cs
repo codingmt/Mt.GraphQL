@@ -18,7 +18,7 @@ namespace Mt.GraphQL.Api
         /// <param name="query">The query string.</param>
         /// <param name="payload">The optional payload.</param>
         /// <returns>The created <see cref="HttpRequestMessage"/>.</returns>
-        public delegate Task<HttpRequestMessage> CreateHttpRequestMessageAsyncDelegate(Configuration configuration, string entityName, HttpMethod httpMethod, string query, string? payload = null);
+        public delegate Task<HttpRequestMessage> CreateHttpRequestMessageAsyncDelegate(Configuration configuration, string entityName, HttpMethod httpMethod, string query, string payload = null);
         /// <summary>
         /// Delegate for processing a <see cref="HttpRequestMessage"/>.
         /// </summary>
@@ -65,10 +65,10 @@ namespace Mt.GraphQL.Api
         /// <summary>
         /// Optional handler for creating a custom <see cref="HttpRequestMessage"/>.
         /// </summary>
-        public CreateHttpRequestMessageAsyncDelegate? CreateHttpRequestMessageHandler { get; set; }
+        public CreateHttpRequestMessageAsyncDelegate CreateHttpRequestMessageHandler { get; set; }
         /// <summary>
         /// Optional handler for custom processing the <see cref="HttpRequestMessage"/>.
         /// </summary>
-        public ProcessRequestAsyncDelegate? ProcessRequestHandler { get; set; }
+        public ProcessRequestAsyncDelegate ProcessRequestHandler { get; set; }
     }
 }

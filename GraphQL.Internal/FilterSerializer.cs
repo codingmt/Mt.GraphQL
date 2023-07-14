@@ -25,7 +25,7 @@ namespace Mt.GraphQL.Internal
 
         private readonly StringBuilder _result = new StringBuilder();
 
-        private ParameterExpression? _parameter;
+        private readonly ParameterExpression _parameter;
         private bool _evaluatingAnd = false;
 
         public FilterSerializer(Expression filter)
@@ -119,7 +119,7 @@ namespace Mt.GraphQL.Internal
                     _result.Append(")");
                     break;
                 case ExpressionType.Convert:
-                    if (node.Type.GetGenericTypeDefinition() != typeof(Nullable<>))
+                    if (!node.Type.IsGenericType || node.Type.GetGenericTypeDefinition() != typeof(Nullable<>))
                         throw new NotSupportedException($"Conversion to type {node.Type.Name} is not supported");
                     AppendConstant(Expression.Lambda(node).Compile().DynamicInvoke());
                     return node;
@@ -232,7 +232,9 @@ namespace Mt.GraphQL.Internal
 
         private void AppendConstant(object constant)
         {
-            if (constant is DateTime dt)
+            if (constant == null)
+                _result.Append("null");
+            else if (constant is DateTime dt)
                 AppendDateTime(dt);
             else if (constant is float s)
                 _result.Append(s.ToString("G"));

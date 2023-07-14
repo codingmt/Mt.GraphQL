@@ -65,15 +65,17 @@ namespace Mt.GraphQL.Api
 
         private async Task<string> ProcessRequestAsync(HttpRequestMessage httpRequestMessage)
         {
-            using var clientLease = HttpClientPool.GetHttpClient();
-            var response = await clientLease.HttpClient.SendAsync(httpRequestMessage);
-            if (!response.IsSuccessStatusCode)
-                throw new HttpStatusCodeException(response.StatusCode, response.ReasonPhrase, await response.Content.ReadAsStringAsync());
+            using (var clientLease = HttpClientPool.GetHttpClient())
+            {
+                var response = await clientLease.HttpClient.SendAsync(httpRequestMessage);
+                if (!response.IsSuccessStatusCode)
+                    throw new HttpStatusCodeException(response.StatusCode, response.ReasonPhrase, await response.Content.ReadAsStringAsync());
 
-            return await response.Content.ReadAsStringAsync();
+                return await response.Content.ReadAsStringAsync();
+            }
         }
 
-        private HttpRequestMessage CreateRequest(string entity, HttpMethod httpMethod, string query, string? payload = null)
+        private HttpRequestMessage CreateRequest(string entity, HttpMethod httpMethod, string query, string payload = null)
         {
             var request = new HttpRequestMessage(
                 httpMethod,

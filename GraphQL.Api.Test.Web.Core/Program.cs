@@ -4,6 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+// Only needed when we use ApiController attribute on controllers
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(
     opt => opt.InvalidModelStateResponseFactory =
         ctx => ctx.ModelState.ToBadRequest(ctx));

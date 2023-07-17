@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using System.Net;
 
 namespace System.Web.Mvc
 {
@@ -8,7 +7,6 @@ namespace System.Web.Mvc
     {
         public static ActionResult ToBadRequest(this ModelStateDictionary modelState, ActionContext context)
         {
-            context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
             var keys = modelState.Keys.ToArray();
             return new BadRequestObjectResult(
                 modelState.Values

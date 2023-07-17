@@ -1,6 +1,5 @@
 ﻿using Mt.GraphQL.Api.Test.Web.Core.Models;
 using System.Data.Entity;
-using System.Linq;
 
 namespace Mt.GraphQL.Api.Test.Web.Core.EF
 {

@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Mt.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>Mt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Effort.EF6" Version="2.2.16" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GraphQL.Api.EntityFramework\GraphQL.Api.EntityFramework.csproj" />
+    <ProjectReference Include="..\GraphQL.Api\GraphQL.Api.csproj" />
+  </ItemGroup>
+
+</Project>

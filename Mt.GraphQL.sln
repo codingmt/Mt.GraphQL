@@ -9,11 +9,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphQL.Api.Test", "GraphQL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphQL.Api.Client", "GraphQL.Api.Client\GraphQL.Api.Client.csproj", "{ECE3302E-3F3F-4F1A-B22E-DD58EAB1F2F5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphQL.Internal", "GraphQL.Internal\GraphQL.Internal.csproj", "{C8783BB7-644B-46FE-AB28-123D6031BCFC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphQL.Internal", "GraphQL.Internal\GraphQL.Internal.csproj", "{C8783BB7-644B-46FE-AB28-123D6031BCFC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphQL.Api.Test.Web.NetFramework", "GraphQL.Api.Test.Web.NetFramework\GraphQL.Api.Test.Web.NetFramework.csproj", "{CB8F45D5-15D8-4BC4-BF57-BFF6B323E4B0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphQL.Api.EntityFramework", "GraphQL.Api.EntityFramework\GraphQL.Api.EntityFramework.csproj", "{8C4BA73E-9A19-41F1-84AC-E2FF3CF3FBA3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphQL.Api.Test.Web.Core", "GraphQL.Api.Test.Web.Core\GraphQL.Api.Test.Web.Core.csproj", "{0613A8D6-86F3-469A-98D7-96D4071A1437}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{8C4BA73E-9A19-41F1-84AC-E2FF3CF3FBA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C4BA73E-9A19-41F1-84AC-E2FF3CF3FBA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C4BA73E-9A19-41F1-84AC-E2FF3CF3FBA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0613A8D6-86F3-469A-98D7-96D4071A1437}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0613A8D6-86F3-469A-98D7-96D4071A1437}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0613A8D6-86F3-469A-98D7-96D4071A1437}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0613A8D6-86F3-469A-98D7-96D4071A1437}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

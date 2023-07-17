@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web.Http;
+﻿using System.Web.Http;
 
 namespace Mt.GraphQL.Api.Test.Web.NetFramework
 {
@@ -17,7 +14,7 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",
                 routeTemplate: "api/{controller}/{id}",
-                defaults: new { controller = "Home", id = RouteParameter.Optional }
+                defaults: new { controller = "Api", id = RouteParameter.Optional }
             );
         }
     }

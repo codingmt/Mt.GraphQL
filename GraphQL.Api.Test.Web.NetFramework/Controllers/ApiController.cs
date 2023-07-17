@@ -6,7 +6,7 @@ using System.Web.Http;
 namespace Mt.GraphQL.Api.Test.Web.NetFramework.Controllers
 {
     [AllowAnonymous]
-    public class HomeController : ApiController
+    public class ApiController : System.Web.Http.ApiController
     {
         [HttpGet]
         public IHttpActionResult Index([FromUri]Query<Entity> query)

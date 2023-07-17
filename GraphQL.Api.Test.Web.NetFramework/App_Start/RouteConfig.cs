@@ -14,9 +14,9 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
             routes.MapRoute(
-                name: "Default",
-                url: "{controller}/{action}/{id}",
-                defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
+                name: "DefaultMvc",
+                url: "Mvc/{controller}/{action}/{id}",
+                defaults: new { controller = "Mvc", action = "Index", id = UrlParameter.Optional }
             );
         }
     }

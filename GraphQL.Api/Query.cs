@@ -1,8 +1,6 @@
 ﻿using Mt.GraphQL.Internal;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Net;
-using System.Net.Http;
 using System.Text;
 
 namespace Mt.GraphQL.Api

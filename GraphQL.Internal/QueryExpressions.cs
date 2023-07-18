@@ -24,30 +24,37 @@ namespace Mt.GraphQL.Internal
 
         public void ParseSelect(string expression)
         {
-            var parameter = Expression.Parameter(typeof(T), "x");
-            var properties = expression.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(propName =>
-                {
-                    var (expr, t) = ParseMemberExpression(ref propName, parameter);
-                    return new { expr, type = t, name = propName };
-                })
-                .ToArray();
-            switch (properties.Length)
+            try
             {
-                case 0:
-                    SelectExpression = null;
-                    break;
-                case 1:
-                    SelectExpression = properties[0].expr;
-                    break;
-                default:
-                    var type = TypeBuilder.GetType(properties.Select(p => (p.name, p.type)).ToArray());
-                    SelectExpression = Expression.Lambda(
-                        Expression.MemberInit(
-                            Expression.New(type.GetConstructors().First()),
-                            properties.Select(p => Expression.Bind(type.GetProperty(p.name), p.expr.Body))),
-                        parameter);
-                    break;
+                var parameter = Expression.Parameter(typeof(T), "x");
+                var properties = expression.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(propName =>
+                    {
+                        var (expr, t) = ParseMemberExpression(ref propName, parameter);
+                        return new { expr, type = t, name = propName };
+                    })
+                    .ToArray();
+                switch (properties.Length)
+                {
+                    case 0:
+                        SelectExpression = null;
+                        break;
+                    case 1:
+                        SelectExpression = properties[0].expr;
+                        break;
+                    default:
+                        var type = TypeBuilder.GetType(properties.Select(p => (p.name, p.type)).ToArray());
+                        SelectExpression = Expression.Lambda(
+                            Expression.MemberInit(
+                                Expression.New(type.GetConstructors().First()),
+                                properties.Select(p => Expression.Bind(type.GetProperty(p.name), p.expr.Body))),
+                            parameter);
+                        break;
+                }
+            }
+            catch (ConfigurationException ex)
+            {
+                throw new QueryInternalException(expression, ex.Message);
             }
         }
 
@@ -86,28 +93,35 @@ namespace Mt.GraphQL.Internal
 
         public void ParseOrderBy(string orderBy)
         {
-            var parameter = Expression.Parameter(typeof(T), "x");
-            OrderBy.Clear();
-            OrderBy.AddRange(
-                orderBy.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(part =>
-                    {
-                        part = part.Trim();
-                        var descending = false;
-                        if (part.EndsWith(" desc", StringComparison.InvariantCultureIgnoreCase))
+            try
+            {
+                var parameter = Expression.Parameter(typeof(T), "x");
+                OrderBy.Clear();
+                OrderBy.AddRange(
+                    orderBy.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(part =>
                         {
-                            descending = true;
-                            part = part.Substring(0, part.Length - 5).Trim();
-                        }
-                        else if (part.EndsWith(" asc", StringComparison.InvariantCultureIgnoreCase))
-                            part = part.Substring(0, part.Length - 4).Trim();
+                            part = part.Trim();
+                            var descending = false;
+                            if (part.EndsWith(" desc", StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                descending = true;
+                                part = part.Substring(0, part.Length - 5).Trim();
+                            }
+                            else if (part.EndsWith(" asc", StringComparison.InvariantCultureIgnoreCase))
+                                part = part.Substring(0, part.Length - 4).Trim();
 
-                        var (member, _) = ParseMemberExpression(ref part, parameter);
-                        return (member, descending);
-                    }));
+                            var (member, _) = ParseMemberExpression(ref part, parameter, true);
+                            return (member, descending);
+                        }));
+            }
+            catch (ConfigurationException ex)
+            {
+                throw new QueryInternalException(orderBy, ex.Message);
+            }
         }
 
-        private static (LambdaExpression expr, Type t) ParseMemberExpression(ref string memberExpression, ParameterExpression parameter)
+        private static (LambdaExpression expr, Type t) ParseMemberExpression(ref string memberExpression, ParameterExpression parameter, bool validateIndexed = false)
         {
             memberExpression = memberExpression.Trim();
             var normalizedMemberExpression = string.Empty;
@@ -117,6 +131,8 @@ namespace Mt.GraphQL.Internal
             {
                 var prop = t.GetProperties().SingleOrDefault(x => x.Name.Equals(part, StringComparison.OrdinalIgnoreCase))
                     ?? throw new QueryInternalException(memberExpression, $"Could not parse expression; {part} not found");
+                if (validateIndexed)
+                    Configuration.ValidateMember(prop);
                 expr = Expression.Property(expr, prop);
                 t = prop.PropertyType;
                 normalizedMemberExpression = $"{normalizedMemberExpression}.{prop.Name}";

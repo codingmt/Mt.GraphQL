@@ -49,9 +49,16 @@ namespace Mt.GraphQL.Internal
             _filter = filter?.Trim() ?? string.Empty;
             _position = 0;
             Expression result = null;
-            while (_position < _filter.Length)
+            try
             {
-                result = ReadBooleanPart(result);
+                while (_position < _filter.Length)
+                {
+                    result = ReadBooleanPart(result);
+                }
+            }
+            catch (ConfigurationException ex)
+            {
+                throw new QueryInternalException(filter, ex.Message);
             }
             return result == null ? null : Expression.Lambda<Func<T, bool>>(result, _parameter);
         }
@@ -161,8 +168,9 @@ namespace Mt.GraphQL.Internal
                         Expression result = _parameter;
                         foreach (var member in match.Groups["member"].Value.Split(new[] { '.' }))
                         {
-                            var property = ownerType.GetProperties().SingleOrDefault(p => p.Name == member)
+                            var property = ownerType.GetProperties().SingleOrDefault(p => p.Name.Equals(member, StringComparison.OrdinalIgnoreCase))
                                 ?? throw new QueryInternalException(_filter, $"Property {member} was not found on type {ownerType.Name}");
+                            Configuration.ValidateMember(property);
                             result = Expression.Property(result, property);
                             ownerType = property.PropertyType;
                         }

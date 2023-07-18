@@ -1,4 +1,11 @@
+using Mt.GraphQL.Api.Server;
+using Mt.GraphQL.Api.Test.Web.Core.Models;
 using System.Web.Mvc;
+
+GraphqlConfiguration.Configure<Entity>()
+    .AllowFilteringAndSorting(x => x.Id)
+    .AllowFilteringAndSorting(x => x.Name)
+    .AllowFilteringAndSorting(x => x.Related_Id);
 
 var builder = WebApplication.CreateBuilder(args);
 

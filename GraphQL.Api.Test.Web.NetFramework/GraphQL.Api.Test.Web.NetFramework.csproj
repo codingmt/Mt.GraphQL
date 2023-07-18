@@ -139,9 +139,7 @@
       <DependentUpon>Web.config</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="App_Data\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\GraphQL.Api.Server\GraphQL.Api.Server.csproj">
       <Project>{a6dc11fd-9fca-48c7-87c9-2e0e25c04066}</Project>

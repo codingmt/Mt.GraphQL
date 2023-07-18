@@ -9,7 +9,7 @@ namespace System.Web.Mvc
         {
             context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
             var keys = modelState.Keys.ToArray();
-            return new ContentResult()
+            return new ContentResult
             {
                 Content = modelState.Values
                     .SelectMany((v, i) => v.Errors.Select(e => $"Error in {keys[i]}: {e.Exception?.Message ?? e.ErrorMessage}"))

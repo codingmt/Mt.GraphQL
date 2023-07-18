@@ -7,6 +7,9 @@ using System.Reflection;
 
 namespace System.Linq
 {
+    /// <summary>
+    /// Extensions for <see cref="IQueryable{T}"/>.
+    /// </summary>
     public static class QueryableExtensions
     {
         private static readonly MethodInfo _selectMethod = GetMethodInfo(q => q.Select(x => x));
@@ -88,6 +91,10 @@ namespace System.Linq
             return result;
         }
 
+        /// <summary>
+        /// Converts the <paramref name="query"/> to a <see cref="JArray"/>.
+        /// </summary>
+        /// <param name="query">The query to convert.</param>
         public static JArray ToArray(this IQueryable query) =>
             JArray.FromObject(query);
     }

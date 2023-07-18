@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GraphQL.Api.EntityFramework\GraphQL.Api.EntityFramework.csproj" />
+    <ProjectReference Include="..\GraphQL.Api.Server\GraphQL.Api.Server.csproj" />
     <ProjectReference Include="..\GraphQL.Api\GraphQL.Api.csproj" />
   </ItemGroup>
 

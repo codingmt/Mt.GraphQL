@@ -24,7 +24,7 @@ namespace Mt.GraphQL.Internal
                 Members = newexp.Arguments
                     .Select(getMember)
                     .ToArray();
-            if (lambda.Body is MemberInitExpression memberInit)
+            else if (lambda.Body is MemberInitExpression memberInit)
                 Members = memberInit.Bindings
                     .Select(b => b.Member.Name)
                     .ToArray();
@@ -88,7 +88,7 @@ namespace Mt.GraphQL.Internal
                 .GetMethod(nameof(CreateGetPropertyFunction), BindingFlags.NonPublic | BindingFlags.Static);
             var getPropertyFunctions = properties
                 .Select((p, i) => 
-                    (Func<JToken, object>) createGetPropertyFunctionMethod.MakeGenericMethod(p.PropertyType).Invoke(null, new object[] { Members[i].Replace('.', '_') }))
+                    (Func<JToken, object>) createGetPropertyFunctionMethod.MakeGenericMethod(p.PropertyType).Invoke(null, new object[] { Members[i] }))
                 .ToArray();
 
             return

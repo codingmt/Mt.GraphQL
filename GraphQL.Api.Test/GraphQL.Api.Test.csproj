@@ -13,6 +13,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Acheve.TestHost" Version="3.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.20" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NUnit" Version="3.13.3" />
@@ -23,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\GraphQL.Api.Client\GraphQL.Api.Client.csproj" />
     <ProjectReference Include="..\GraphQL.Api.Server\GraphQL.Api.Server.csproj" />
+    <ProjectReference Include="..\GraphQL.Api.Test.Web.Core\GraphQL.Api.Test.Web.Core.csproj" />
     <ProjectReference Include="..\GraphQL.Api\GraphQL.Api.csproj" />
     <ProjectReference Include="..\GraphQL.Internal\GraphQL.Internal.csproj" />
   </ItemGroup>

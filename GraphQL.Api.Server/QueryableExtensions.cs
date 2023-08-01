@@ -1,7 +1,9 @@
 ﻿using Mt.GraphQL.Api;
 using Mt.GraphQL.Internal;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -95,7 +97,20 @@ namespace System.Linq
         /// Converts the <paramref name="query"/> to a <see cref="JArray"/>.
         /// </summary>
         /// <param name="query">The query to convert.</param>
-        public static JArray ToArray(this IQueryable query) =>
-            JArray.FromObject(query);
+        public static JArray ToJArray(this IQueryable query) =>
+            JArray.FromObject(
+                query, 
+                new JsonSerializer 
+                { 
+                    NullValueHandling = NullValueHandling.Ignore,
+                    Formatting = Formatting.None // TODO: Formatting.None does not work?!
+                });
+
+        /// <summary>
+        /// Converts the <paramref name="query"/> to JSON.
+        /// </summary>
+        /// <param name="query">The query to convert.</param>
+        public static string ToJson(this IQueryable query) =>
+            query.ToJArray().ToString();
     }
 }

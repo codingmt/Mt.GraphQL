@@ -29,17 +29,12 @@ namespace Mt.GraphQL.Internal
         private static readonly Regex _operatorRegex = 
             new Regex(@"\s*(?<operator>[a-z]+)\s", RegexOptions.IgnoreCase);
 
-        private static readonly MethodInfo _stringContains =
-            typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string), typeof(StringComparison) });
-        private static readonly MethodInfo _stringStartsWith =
-            typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string), typeof(StringComparison) });
-        private static readonly MethodInfo _stringEndsWith =
-            typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string), typeof(StringComparison) });
-        private static readonly MethodInfo _arrayContains =
-            typeof(Enumerable).GetMethods().Single(x => x.Name == nameof(string.Contains) && x.GetParameters().Length == 2);
+        private static readonly MethodInfo _stringContains = GetMethodInfo<string>(s => s.Contains(string.Empty));
+        private static readonly MethodInfo _stringStartsWith = GetMethodInfo<string>(s => s.StartsWith(string.Empty));
+        private static readonly MethodInfo _stringEndsWith = GetMethodInfo<string>(s => s.EndsWith(string.Empty));
+        private static readonly MethodInfo _arrayContains = GetMethodInfo<string[]>(a => a.Contains(string.Empty));
 
-        private static readonly ParameterExpression _parameter = 
-            Expression.Parameter(typeof(T), "x");
+        private static readonly ParameterExpression _parameter = Expression.Parameter(typeof(T), "x");
 
         private string _filter = string.Empty;
         private int _position;
@@ -140,15 +135,15 @@ namespace Mt.GraphQL.Internal
                             case "contains":
                                 if (parameters.Count != 2)
                                     throw new QueryInternalException(_filter, $"Expected 2 parameters for function '{functionName}'.");
-                                return Expression.Call(parameters[0], _stringContains, parameters[1], Expression.Constant(StringComparison.OrdinalIgnoreCase));
+                                return Expression.Call(parameters[0], _stringContains, parameters[1]);
                             case "startswith":
                                 if (parameters.Count != 2)
                                     throw new QueryInternalException(_filter, $"Expected 2 parameters for function '{functionName}'.");
-                                return Expression.Call(parameters[0], _stringStartsWith, parameters[1], Expression.Constant(StringComparison.OrdinalIgnoreCase));
+                                return Expression.Call(parameters[0], _stringStartsWith, parameters[1]);
                             case "endswith":
                                 if (parameters.Count != 2)
                                     throw new QueryInternalException(_filter, $"Expected 2 parameters for function '{functionName}'.");
-                                return Expression.Call(parameters[0], _stringEndsWith, parameters[1], Expression.Constant(StringComparison.OrdinalIgnoreCase));
+                                return Expression.Call(parameters[0], _stringEndsWith, parameters[1]);
                             case "not":
                                 if (parameters.Count != 1 || parameters[0].Type != typeof(bool))
                                     throw new QueryInternalException(_filter, $"Expected 1 boolean parameter for function '{functionName}'.");
@@ -279,7 +274,7 @@ namespace Mt.GraphQL.Internal
             }
             catch (Exception ex)
             {
-                throw new QueryInternalException(_filter, $"Error parsing constant value {match.Value}", ex);
+                throw new QueryInternalException(_filter, $"Error parsing constant value {match.Value}: {ex.Message}", ex);
             }
 
             if (constant == null)
@@ -332,6 +327,16 @@ namespace Mt.GraphQL.Internal
             }
 
             return Expression.NewArrayInit(related.Type, items.ToArray());
+        }
+
+        private static MethodInfo GetMethodInfo<TOwner>(Expression<Func<TOwner, bool>> expression)
+        {
+            var method = (expression.Body as MethodCallExpression).Method;
+
+            if (method.IsGenericMethod)
+                method = method.GetGenericMethodDefinition();
+
+            return method;
         }
     }
 }

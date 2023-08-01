@@ -6,8 +6,8 @@ using System.Web.Mvc;
 namespace Mt.GraphQL.Api.Test.Web.Core.Controllers
 {
     [ApiController]
-    [Route("Mvc")]
-    public class MvcController : ControllerBase
+    [Route("Entity")]
+    public class EntityController : ControllerBase
     {
         [HttpGet]
         public ActionResult Get([FromQuery] Query<Entity> query)
@@ -19,7 +19,7 @@ namespace Mt.GraphQL.Api.Test.Web.Core.Controllers
             try
             {
                 using var context = new DbContext();
-                return Content(context.Entities.Apply(query).ToArray().ToString(), "application/json");
+                return Content(context.Entities.Apply(query).ToJson(), "application/json");
             }
             catch (QueryException ex)
             {

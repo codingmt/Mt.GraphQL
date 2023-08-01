@@ -22,7 +22,7 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework.Controllers
                         new
                         {
                             query,
-                            data = context.Entities.Apply(query).ToArray()
+                            data = context.Entities.Apply(query).ToJArray()
                         });
                 }
             }

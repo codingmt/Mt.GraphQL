@@ -40,12 +40,12 @@ namespace Mt.GraphQL.Api.Test
   {
     ""Id"": 5,
     ""Name"": ""E"",
-    ""Related_Name"": ""Related to E""
+    ""Related.Name"": ""Related to E""
   },
   {
     ""Id"": 2,
     ""Name"": ""B"",
-    ""Related_Name"": ""Related to B""
+    ""Related.Name"": ""Related to B""
   }
 ]"));
 
@@ -102,6 +102,7 @@ namespace Mt.GraphQL.Api.Test
     ""Type"": null,
     ""IsCustomer"": false,
     ""Date"": null,
+    ""Related_Id"": null,
     ""Related"": null
   },
   null

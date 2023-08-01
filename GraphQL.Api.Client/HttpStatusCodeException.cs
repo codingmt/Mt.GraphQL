@@ -30,7 +30,7 @@ namespace Mt.GraphQL.Api
         /// <param name="reasonPhrase">The received reason phrase.</param>
         /// <param name="content">The received content.</param>
         public HttpStatusCodeException(HttpStatusCode statusCode, string reasonPhrase, string content)
-            : base($"Error processing HTTP request: {statusCode} {reasonPhrase}".Trim())
+            : base($"HTTP {statusCode}: {content ?? reasonPhrase}".Trim())
         {
             StatusCode = statusCode;
             ReasonPhrase = reasonPhrase;

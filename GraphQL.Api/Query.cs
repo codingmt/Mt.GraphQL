@@ -13,6 +13,8 @@ namespace Mt.GraphQL.Api
         where T : class
     {
         private readonly QueryExpressions<T> _expressions = new QueryExpressions<T>();
+        private int? _skip;
+        private int? _take;
 
         /// <summary>
         /// The fields to select from type <typeparamref name="T"/>.
@@ -74,12 +76,32 @@ namespace Mt.GraphQL.Api
         /// <summary>
         /// The number of items to skip.
         /// </summary>
-        public int? Skip { get; set; }
+        public int? Skip
+        {
+            get => _skip;
+            set
+            {
+                if (value < 0)
+                    throw new Exception($"{nameof(Skip)} cannot be negative.");
+
+                _skip = value;
+            }
+        }
 
         /// <summary>
         /// The number of items to take.
         /// </summary>
-        public int? Take { get; set; }
+        public int? Take
+        {
+            get => _take;
+            set
+            {
+                if (value < 0)
+                    throw new Exception($"{nameof(Take)} cannot be negative.");
+
+                _take = value;
+            }
+        }
 
         QueryExpressions<T> IQueryInternal<T>.Expressions => _expressions;
 

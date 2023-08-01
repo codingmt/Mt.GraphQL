@@ -20,7 +20,7 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework.Controllers
                 using (var context = new DbContext())
                 {
                     return Content(
-                        context.Entities.Apply(query).ToArray().ToString(), 
+                        context.Entities.Apply(query).ToJson(), 
                         "application/json");
                 }
             }

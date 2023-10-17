@@ -99,18 +99,19 @@ namespace System.Linq
         /// <param name="query">The query to convert.</param>
         public static JArray ToJArray(this IQueryable query) =>
             JArray.FromObject(
-                query, 
-                new JsonSerializer 
-                { 
+                query,
+                new JsonSerializer
+                {
                     NullValueHandling = NullValueHandling.Ignore,
-                    Formatting = Formatting.None // TODO: Formatting.None does not work?!
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                 });
 
         /// <summary>
         /// Converts the <paramref name="query"/> to JSON.
         /// </summary>
         /// <param name="query">The query to convert.</param>
-        public static string ToJson(this IQueryable query) =>
-            query.ToJArray().ToString();
+        /// <param name="formatting">The formatting type to apply.</param>
+        public static string ToJson(this IQueryable query, Formatting formatting = Formatting.None) =>
+            query.ToJArray().ToString(formatting);
     }
 }

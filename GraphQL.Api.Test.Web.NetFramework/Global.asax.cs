@@ -15,10 +15,13 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework
             GlobalConfiguration.Configure(WebApiConfig.Register);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
 
-            GraphqlConfiguration.Configure<Entity>()
+            GraphqlConfiguration.Configure<Customer>()
+                .AllowFilteringAndSorting(x => x.Id)
+                .AllowFilteringAndSorting(x => x.Name);
+            GraphqlConfiguration.Configure<Contact>()
                 .AllowFilteringAndSorting(x => x.Id)
                 .AllowFilteringAndSorting(x => x.Name)
-                .AllowFilteringAndSorting(x => x.Related_Id);
+                .AllowFilteringAndSorting(x => x.Customer_Id);
         }
     }
 }

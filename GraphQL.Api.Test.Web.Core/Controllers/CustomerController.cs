@@ -6,11 +6,11 @@ using System.Web.Mvc;
 namespace Mt.GraphQL.Api.Test.Web.Core.Controllers
 {
     [ApiController]
-    [Route("Entity")]
-    public class EntityController : ControllerBase
+    [Route("Customer")]
+    public class CustomerController : ControllerBase
     {
         [HttpGet]
-        public ActionResult Get([FromQuery] Query<Entity> query)
+        public ActionResult Get([FromQuery] Query<Customer> query)
         {
             // This part is only needed when the controller has no ApiController attribute.
             if (!ModelState.IsValid)
@@ -19,7 +19,7 @@ namespace Mt.GraphQL.Api.Test.Web.Core.Controllers
             try
             {
                 using var context = new DbContext();
-                return Content(context.Entities.Apply(query).ToJson(), "application/json");
+                return Content(context.Customers.Apply(query).ToJson(), "application/json");
             }
             catch (QueryException ex)
             {

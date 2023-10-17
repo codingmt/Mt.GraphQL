@@ -8,10 +8,13 @@ namespace Mt.GraphQL.Api.Test.Web.Core
     {
         internal static void Main(string[] args)
         {
-            GraphqlConfiguration.Configure<Entity>()
+            GraphqlConfiguration.Configure<Customer>()
+                .AllowFilteringAndSorting(x => x.Id)
+                .AllowFilteringAndSorting(x => x.Name);
+            GraphqlConfiguration.Configure<Contact>()
                 .AllowFilteringAndSorting(x => x.Id)
                 .AllowFilteringAndSorting(x => x.Name)
-                .AllowFilteringAndSorting(x => x.Related_Id);
+                .AllowFilteringAndSorting(x => x.Customer_Id);
 
             var builder = WebApplication.CreateBuilder(args);
 

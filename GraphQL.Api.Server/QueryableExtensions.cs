@@ -2,10 +2,12 @@
 using Mt.GraphQL.Internal;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace System.Linq
 {
@@ -84,34 +86,24 @@ namespace System.Linq
                 result = (IQueryable)takeMethod.Invoke(null, new object[] { result, query.Take.Value });
             }
 
-            if (query.Expressions.SelectExpression != null)
-            {
-                var selectMethod = _selectMethod.MakeGenericMethod(typeof(T), query.Expressions.SelectExpression.ReturnType);
-                result = (IQueryable)selectMethod.Invoke(null, new object[] { result, query.Expressions.SelectExpression });
-            }
+            var selectExpression = query.Expressions.GetActualSelectExpression();
+            var selectMethod = _selectMethod.MakeGenericMethod(typeof(T), selectExpression.ReturnType);
+            result = (IQueryable)selectMethod.Invoke(null, new object[] { result, selectExpression });
 
             return result;
         }
 
         /// <summary>
-        /// Converts the <paramref name="query"/> to a <see cref="JArray"/>.
+        /// Converts an <see cref="IQueryable"/> to an array of objects.
         /// </summary>
         /// <param name="query">The query to convert.</param>
-        public static JArray ToJArray(this IQueryable query) =>
-            JArray.FromObject(
-                query,
-                new JsonSerializer
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-                });
-
-        /// <summary>
-        /// Converts the <paramref name="query"/> to JSON.
-        /// </summary>
-        /// <param name="query">The query to convert.</param>
-        /// <param name="formatting">The formatting type to apply.</param>
-        public static string ToJson(this IQueryable query, Formatting formatting = Formatting.None) =>
-            query.ToJArray().ToString(formatting);
+        public static object[] ToArray(this IQueryable query)
+        {
+            var result = new List<object>();
+            var enumerator = query.GetEnumerator();
+            while (enumerator.MoveNext())
+                result.Add(enumerator.Current);
+            return result.ToArray();
+        }
     }
 }

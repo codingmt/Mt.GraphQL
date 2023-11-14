@@ -26,13 +26,12 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework.Controllers
             {
                 using (var context = new DbContext())
                 {
-                    return Json(
+                    return Ok(
                         new
                         {
                             query,
-                            data = getSet(context).Apply(query).ToJArray()
-                        },
-                        new JsonSerializerSettings() { Formatting = Formatting.None });
+                            data = getSet(context).Apply(query).ToArray()
+                        });
                 }
             }
             catch (QueryException ex)

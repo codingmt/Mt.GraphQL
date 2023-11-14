@@ -78,11 +78,9 @@ namespace System.Collections.Generic
                 result = (IEnumerable)takeMethod.Invoke(null, new object[] { result, query.Take.Value });
             }
 
-            if (query.Expressions.SelectExpression != null)
-            {
-                var selectMethod = _selectMethod.MakeGenericMethod(typeof(T), query.Expressions.SelectExpression.ReturnType);
-                result = (IEnumerable)selectMethod.Invoke(null, new object[] { result, query.Expressions.SelectExpression.Compile() });
-            }
+            var selectExpression = query.Expressions.GetActualSelectExpression();
+            var selectMethod = _selectMethod.MakeGenericMethod(typeof(T), selectExpression.ReturnType);
+            result = (IEnumerable)selectMethod.Invoke(null, new object[] { result, selectExpression.Compile() });
 
             return result;
         }

@@ -25,6 +25,19 @@ namespace Mt.GraphQL.Api.Test
         }
 
         [Test]
+        public async Task TestGetAll()
+        {
+            var result = await _client.Contacts.ToArrayAsync();
+
+            Assert.That(
+                _client.Json, 
+                Is.EqualTo("[{\"id\":1,\"name\":\"Contact 1.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1970-05-15T00:00:00\",\"customer_Id\":1,\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":2,\"name\":\"Contact 1.2\",\"function\":\"Secretary\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1980-06-16T00:00:00\",\"customer_Id\":1,\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":3,\"name\":\"Contact 1.3\",\"function\":\"Sales Mgr\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1990-07-17T00:00:00\",\"customer_Id\":1,\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":4,\"name\":\"Contact 2.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1971-05-18T00:00:00\",\"customer_Id\":2,\"customer\":{\"id\":2,\"name\":\"Customer 2\"}}]"));
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Has.Length.EqualTo(4));
+        }
+
+        [Test]
         public async Task TestSingleProperty()
         {
             var result = await _client.Contacts

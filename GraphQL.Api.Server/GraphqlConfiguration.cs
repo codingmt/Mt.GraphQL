@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using InternalConfig = Mt.GraphQL.Internal.Configuration;
 
 namespace Mt.GraphQL.Api.Server
@@ -46,6 +48,97 @@ namespace Mt.GraphQL.Api.Server
             _internalTypeConfig.SetColumnIsIndexed(m.Member.Name);
 
             return this;
+        }
+
+        /// <summary>
+        /// Excludes a property or nested property from the GraphQL model.
+        /// </summary>
+        /// <typeparam name="TProperty">The type of property.</typeparam>
+        /// <param name="property">The property selector.</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        public TypeConfiguration<T> ExcludeProperty<TProperty>(Expression<Func<T, TProperty>> property)
+        {
+            if (property == null)
+                throw new ArgumentNullException(nameof(property));
+
+            var body = property.Body;
+            var member = string.Empty;
+            do
+            {
+                switch (body)
+                {
+                    case MemberExpression m:
+                        member = $".{m.Member.Name}{member}";
+                        body = m.Expression;
+                        break;
+                    case MethodCallExpression call:
+                        body = call.Method.IsStatic ? call.Arguments[0] : call.Object;
+                        break;
+                    default:
+                        throw new ArgumentException($"Argument property must select a property or nested property on type {typeof(T).Name}.");
+                }
+            } while (!(body is ParameterExpression));
+
+            if (body != property.Parameters[0])
+                throw new ArgumentException($"Argument property must select a property on type {typeof(T).Name}.");
+
+            _internalTypeConfig.ExcludeColumn(member.Substring(1));
+
+            return this;
+        }
+
+        /// <summary>
+        /// Configures a property as fit for filtering and ordering.
+        /// </summary>
+        /// <typeparam name="TProperty">The type of property.</typeparam>
+        /// <typeparam name="TAttribute">The type of attribute.</typeparam>
+        /// <param name="property">The property selector.</param>
+        /// <param name="attribute"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        public TypeConfiguration<T> ApplyAttribute<TProperty, TAttribute>(
+            Expression<Func<T, TProperty>> property, 
+            Expression<Func<TAttribute>> attribute)
+            where TAttribute : Attribute
+        {
+            if (property == null)
+                throw new ArgumentNullException(nameof(property));
+            if (!(property.Body is MemberExpression m) ||
+                (m.Expression != property.Parameters[0]))
+                throw new ArgumentException($"Argument property must select a property on type {typeof(T).Name}.");
+
+            if (attribute == null)
+                throw new ArgumentNullException(nameof(attribute));
+            switch (attribute.Body)
+            {
+                case NewExpression n:
+                    validateNewExpression(n);
+                    break;
+                case MemberInitExpression i:
+                    validateNewExpression(i.NewExpression);
+                    var faultyBinding = i.Bindings.FirstOrDefault(b => 
+                        !(b is MemberAssignment ma) || 
+                        !(b.Member is PropertyInfo) ||
+                        !(m.Expression is ConstantExpression));
+                    if (faultyBinding != null)
+                        throw new ArgumentException($"Argument attribute has a constructor binding that is not property bound to a constant ({faultyBinding.Member.Name}).");
+                    break;
+                default:
+                    throw new ArgumentException("Argument attribute must construct an attribute.");
+            }
+
+            _internalTypeConfig.ApplyAttribute(m.Member.Name, attribute.Body);
+
+            return this;
+
+            void validateNewExpression(NewExpression newExpression)
+            {
+                if (!typeof(Attribute).IsAssignableFrom(newExpression.Constructor.DeclaringType))
+                    throw new ArgumentException("Argument attribute must construct an attribute.");
+                if (newExpression.Arguments.Any(a => !(a is ConstantExpression)))
+                    throw new ArgumentException("Argument attribute constructor arguments can only contain constants.");
+            }
         }
     }
 }

@@ -165,7 +165,7 @@ namespace Mt.GraphQL.Internal
                         {
                             var property = ownerType.GetProperties().SingleOrDefault(p => p.Name.Equals(member, StringComparison.OrdinalIgnoreCase))
                                 ?? throw new QueryInternalException(_filter, $"Property {member} was not found on type {ownerType.Name}");
-                            Configuration.ValidateMember(property);
+                            Configuration.ValidateMemberIsIndexed(property);
                             result = Expression.Property(result, property);
                             ownerType = property.PropertyType;
                         }

@@ -27,9 +27,7 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework.Controllers
             {
                 using (var context = new DbContext())
                 {
-                    return Content(
-                        getSet(context).Apply(query).ToJson(),
-                        "application/json");
+                    return Json(getSet(context).Apply(query).ToArray());
                 }
             }
             catch (QueryException ex)

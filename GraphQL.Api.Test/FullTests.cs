@@ -6,12 +6,12 @@ namespace Mt.GraphQL.Api.Test
     {
         private static readonly Entity[] _set = new[]
         {
-            new Entity { Id = 1, Name= "A", Description = "Entity A", Related = new Entity{ Name = "Related to A" } },
-            new Entity { Id = 2, Name= "B", Description = "Entity B", Related = new Entity{ Name = "Related to B" } },
-            new Entity { Id = 3, Name= "C", Description = "Entiteit C", Related = new Entity{ Name = "Related to C" } },
+            new Entity { Id = 1, Name= "A", Description = "Entity A", Parent = new ParentEntity{ Name = "Parent of A" } },
+            new Entity { Id = 2, Name= "B", Description = "Entity B", Parent = new ParentEntity { Name = "Parent of B" } },
+            new Entity { Id = 3, Name= "C", Description = "Entiteit C", Parent = new ParentEntity { Name = "Parent of C" } },
             new Entity { Id = 4, Name= "D", Description = "Entiteit D" },
-            new Entity { Id = 5, Name= "E", Description = "Entity E", Related = new Entity{ Name = "Related to E" } },
-            new Entity { Id = 6, Name= "F", Description = "Entity F", Related = new Entity{ Name = "Related to F" } }
+            new Entity { Id = 5, Name= "E", Description = "Entity E", Parent = new ParentEntity { Name = "Parent of E" } },
+            new Entity { Id = 6, Name= "F", Description = "Entity F", Parent = new ParentEntity { Name = "Parent of F" } }
         };
 
         private TestClient _client;
@@ -26,26 +26,26 @@ namespace Mt.GraphQL.Api.Test
         public async Task TestAnonymousClass()
         {
             var clientQuery = _client.Set
-                .Select(x => new { x.Id, EntityName = x.Name, RelatedName = x.Related.Name })
+                .Select(x => new { x.Id, EntityName = x.Name, ParentName = x.Parent.Name })
                 .Where(x => x.Description.Contains("Entity"))
                 .OrderByDescending(x => x.Id)
                 .OrderBy(x => x.Name)
                 .Skip(1)
                 .Take(2);
-            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Id,Name,Related.Name&filter=contains(Description,'Entity')&orderBy=Id desc,Name&skip=1&take=2"));
+            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Id,Name,Parent.Name&filter=contains(Description,'Entity')&orderBy=Id desc,Name&skip=1&take=2"));
 
             var result = await clientQuery.ToArrayAsync();
 
             Assert.That(_client.Json, Is.EqualTo(@"[
   {
-    ""Id"": 5,
-    ""Name"": ""E"",
-    ""Related.Name"": ""Related to E""
+    ""id"": 5,
+    ""name"": ""E"",
+    ""parent.Name"": ""Parent of E""
   },
   {
-    ""Id"": 2,
-    ""Name"": ""B"",
-    ""Related.Name"": ""Related to B""
+    ""id"": 2,
+    ""name"": ""B"",
+    ""parent.Name"": ""Parent of B""
   }
 ]"));
 
@@ -54,10 +54,10 @@ namespace Mt.GraphQL.Api.Test
                 Assert.That(result, Has.Length.EqualTo(2));
                 Assert.That(result[0].Id, Is.EqualTo(5));
                 Assert.That(result[0].EntityName, Is.EqualTo("E"));
-                Assert.That(result[0].RelatedName, Is.EqualTo("Related to E"));
+                Assert.That(result[0].ParentName, Is.EqualTo("Parent of E"));
                 Assert.That(result[1].Id, Is.EqualTo(2));
                 Assert.That(result[1].EntityName, Is.EqualTo("B"));
-                Assert.That(result[1].RelatedName, Is.EqualTo("Related to B"));
+                Assert.That(result[1].ParentName, Is.EqualTo("Parent of B"));
             });
         }
 
@@ -88,9 +88,9 @@ namespace Mt.GraphQL.Api.Test
         public async Task TestSingleMemberObject()
         {
             var clientQuery = _client.Set
-                .Select(x => x.Related)
+                .Select(x => x.Parent)
                 .Where(x => x.Description.Contains("Entiteit"));
-            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Related&filter=contains(Description,'Entiteit')"));
+            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Parent&filter=contains(Description,'Entiteit')"));
 
             var result = await clientQuery.ToArrayAsync();
 

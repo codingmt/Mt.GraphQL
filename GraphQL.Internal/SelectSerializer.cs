@@ -88,7 +88,10 @@ namespace Mt.GraphQL.Internal
                 .GetMethod(nameof(CreateGetPropertyFunction), BindingFlags.NonPublic | BindingFlags.Static);
             var getPropertyFunctions = properties
                 .Select((p, i) => 
-                    (Func<JToken, object>) createGetPropertyFunctionMethod.MakeGenericMethod(p.PropertyType).Invoke(null, new object[] { Members[i] }))
+                {
+                    var member = Members[i].ToLower()[0] + Members[i].Substring(1);
+                    return (Func<JToken, object>)createGetPropertyFunctionMethod.MakeGenericMethod(p.PropertyType).Invoke(null, new object[] { member });
+                })
                 .ToArray();
 
             return

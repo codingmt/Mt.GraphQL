@@ -17,14 +17,14 @@ namespace Mt.GraphQL.Internal
             GetTypeConfiguration(typeof(T), configured);
 
         private static InternalTypeConfig GetTypeConfiguration(Type type, bool configured = false) =>
-                _typeConfigurations.GetOrAdd(type, 
-                    t =>
-                    {
-                        if (t.Namespace == TypeBuilder.Namespace)
-                            throw new Exception("Creating a config for a constructed type.");
+            _typeConfigurations.GetOrAdd(type, 
+                t =>
+                {
+                    if (t.Namespace == TypeBuilder.Namespace)
+                        throw new Exception("Creating a config for a constructed type.");
 
-                        return new InternalTypeConfig(t, configured);
-                    });
+                    return new InternalTypeConfig(t, configured);
+                });
 
         public static void ValidateMemberIsIndexed(PropertyInfo property)
         {
@@ -79,7 +79,7 @@ namespace Mt.GraphQL.Internal
                 {
                     var property = properties[i];
                     property.attributes.AddRange(
-                        _columnAttributes
+                        GetTypeConfiguration(type)._columnAttributes
                             .Where(x => x.columnName.Equals(property.name, StringComparison.OrdinalIgnoreCase))
                             .Select(x => x.attribute));
 

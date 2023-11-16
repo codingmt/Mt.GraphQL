@@ -120,7 +120,7 @@ namespace Mt.GraphQL.Api.Server
                     var faultyBinding = i.Bindings.FirstOrDefault(b => 
                         !(b is MemberAssignment ma) || 
                         !(b.Member is PropertyInfo) ||
-                        !(m.Expression is ConstantExpression));
+                        !(ma.Expression is ConstantExpression));
                     if (faultyBinding != null)
                         throw new ArgumentException($"Argument attribute has a constructor binding that is not property bound to a constant ({faultyBinding.Member.Name}).");
                     break;

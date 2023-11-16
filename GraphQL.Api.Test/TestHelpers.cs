@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Collections;
+﻿using System.Collections;
 using System.Linq.Expressions;
 using Mt.GraphQL.Internal;
+using System.Text.Json;
 
 namespace Mt.GraphQL.Api.Test
 {
@@ -47,7 +47,13 @@ namespace Mt.GraphQL.Api.Test
         }
 
         public static string ToJson(this IEnumerable source) =>
-            JArray.FromObject(source).ToString();
+            JsonSerializer.Serialize(
+                source, 
+                new JsonSerializerOptions 
+                { 
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true 
+                });
 
         public static T? CastIfNotNull<T>(this string? value)
             where T: struct =>

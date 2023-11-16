@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Mt.GraphQL.Internal
 {
@@ -14,6 +16,14 @@ namespace Mt.GraphQL.Internal
 
     public class QueryExpressions<T> : QueryExpressions
     {
+        private static readonly MethodInfo _selectMethod = GetMethodInfo(q => q.Select(x => x));
+        private static readonly MethodInfo _toListMethod = GetMethodInfo(q => q.ToList());
+
+        private static MethodInfo GetMethodInfo(Expression<Func<IQueryable<object>, IQueryable<object>>> method) =>
+            (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
+        private static MethodInfo GetMethodInfo(Expression<Action<IQueryable<object>>> method) =>
+            (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
+
         public QueryExpressions()
         {
             ParseSelect(string.Empty);    
@@ -36,24 +46,18 @@ namespace Mt.GraphQL.Internal
                 var properties = expression.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(propName =>
                     {
-                        var (expr, t, attributes) = ParseMemberExpression(typeof(T), ref propName, parameter);
+                        var (expr, t, attributes) = ParseMemberExpression(resultType, ref propName, parameter);
                         return ( expr, type: t, name: propName, attributes );
                     })
                     .ToArray();
-                switch (properties.Length)
-                {
-                    case 0:
-                        SelectExpression = null;
-                        break;
-                    case 1:
-                        SelectExpression = properties[0].expr;
-                        break;
-                    default:
-                        var type = TypeBuilder.GetType(typeof(T).Name, properties.Select(p => (p.name, p.type, p.attributes)).ToArray());
-                        SelectExpression = Expression.Lambda(
-                            CreateMemberInit(type, parameter, parameter, properties.Select(p => (p.expr, p.type, p.name)).ToArray()),
-                            parameter);
-                        break;
+                if (properties.Length == 0)
+                    SelectExpression = null;
+                else
+                { 
+                    var type = TypeBuilder.GetType(typeof(T).Name, properties.Select(p => (p.name, p.type, p.attributes)).ToArray());
+                    SelectExpression = Expression.Lambda(
+                        CreateMemberInit(type, parameter, properties.Select(p => (p.expr, p.type, p.name)).ToArray()),
+                        parameter);
                 }
             }
             catch (ConfigurationException ex)
@@ -65,7 +69,6 @@ namespace Mt.GraphQL.Internal
         private MemberInitExpression CreateMemberInitForType(Type targetType, Expression from, ParameterExpression param) =>
             CreateMemberInit(
                 targetType, 
-                from,
                 param,
                 targetType.GetProperties()
                     .Select(pp =>
@@ -78,7 +81,7 @@ namespace Mt.GraphQL.Internal
                     })
                     .ToArray());
 
-        private MemberInitExpression CreateMemberInit(Type targetType, Expression from, ParameterExpression param, (LambdaExpression expr, Type type, string name)[] properties) =>
+        private MemberInitExpression CreateMemberInit(Type targetType, ParameterExpression param, (LambdaExpression expr, Type type, string name)[] properties) =>
             Expression.MemberInit(
                 Expression.New(targetType.GetConstructors().First()),
                 properties.Select(p =>
@@ -86,6 +89,27 @@ namespace Mt.GraphQL.Internal
                     var prop = targetType.GetProperty(p.name);
                     if (!prop.PropertyType.IsClass || prop.PropertyType == typeof(string))
                         return Expression.Bind(prop, p.expr.Body);
+
+                    if (typeof(IList).IsAssignableFrom(prop.PropertyType) && prop.PropertyType.IsGenericType)
+                    {
+                        var modelType = prop.PropertyType.GenericTypeArguments[0];
+                        var entityType = p.expr.ReturnType.GenericTypeArguments[0];
+                        var selectParameter = Expression.Parameter(entityType);
+                        return Expression.Bind(prop,
+                            Expression.Call(
+                                null,
+                                _toListMethod.MakeGenericMethod(modelType),
+                                Expression.Call(
+                                    null,
+                                    _selectMethod.MakeGenericMethod(entityType, modelType),
+                                    Expression.Convert(
+                                        p.expr.Body,
+                                        typeof(IQueryable<>).MakeGenericType(p.expr.ReturnType.GenericTypeArguments[0])),
+                                    Expression.Lambda(
+                                        CreateMemberInitForType(modelType, selectParameter, selectParameter),
+                                        selectParameter))
+                                ));
+                    }
 
                     return Expression.Bind(
                         prop,
@@ -170,25 +194,29 @@ namespace Mt.GraphQL.Internal
             }
         }
 
-        private static (LambdaExpression expr, Type t, Expression[] attributes) ParseMemberExpression(Type fromType, ref string memberExpression, ParameterExpression parameter, bool validateIndexed = false)
+        private static (LambdaExpression expr, Type t, Expression[] attributes) ParseMemberExpression(Type modelType, ref string memberExpression, ParameterExpression parameter, bool validateIndexed = false)
         {
             memberExpression = memberExpression.Trim();
             var normalizedMemberExpression = string.Empty;
+            var entityType = parameter.Type;
             Expression expr = parameter;
             Expression[] attributes = null;
             foreach (var part in memberExpression.Split('.'))
             {
-                var prop = fromType.GetProperties().SingleOrDefault(x => x.Name.Equals(part, StringComparison.OrdinalIgnoreCase))
-                    ?? throw new QueryInternalException(memberExpression, $"Could not parse expression; {part} not found");
+                var modelProp = modelType.GetProperties().SingleOrDefault(x => x.Name.Equals(part, StringComparison.OrdinalIgnoreCase))
+                    ?? throw new QueryInternalException(memberExpression, $"Could not parse expression; {part} not found on model.");
+                var entityProp = entityType.GetProperties().SingleOrDefault(x => x.Name.Equals(part, StringComparison.OrdinalIgnoreCase))
+                    ?? throw new QueryInternalException(memberExpression, $"Could not parse expression; {part} not found on entity.");
                 if (validateIndexed)
-                    Configuration.ValidateMemberIsIndexed(prop);
-                expr = Expression.Property(expr, prop);
-                fromType = prop.PropertyType;
-                attributes = prop.GetAttributeExpressions().ToArray();
-                normalizedMemberExpression = $"{normalizedMemberExpression}.{prop.Name}";
+                    Configuration.ValidateMemberIsIndexed(entityProp);
+                expr = Expression.Property(expr, entityProp);
+                modelType = modelProp.PropertyType;
+                entityType = entityProp.PropertyType;
+                attributes = modelProp.GetAttributeExpressions().ToArray();
+                normalizedMemberExpression = $"{normalizedMemberExpression}.{modelProp.Name}";
             }
             memberExpression = normalizedMemberExpression.Substring(1);
-            return (Expression.Lambda(expr, parameter), fromType, attributes);
+            return (Expression.Lambda(expr, parameter), modelType, attributes);
         }
     }
 }

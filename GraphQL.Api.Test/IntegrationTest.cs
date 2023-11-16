@@ -25,16 +25,47 @@ namespace Mt.GraphQL.Api.Test
         }
 
         [Test]
-        public async Task TestGetAll()
+        public async Task TestGetAllManyToOne()
         {
             var result = await _client.Contacts.ToArrayAsync();
 
             Assert.That(
                 _client.Json, 
-                Is.EqualTo("[{\"id\":1,\"name\":\"Contact 1.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1970-05-15T00:00:00\",\"customer_Id\":1,\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":2,\"name\":\"Contact 1.2\",\"function\":\"Secretary\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1980-06-16T00:00:00\",\"customer_Id\":1,\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":3,\"name\":\"Contact 1.3\",\"function\":\"Sales Mgr\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1990-07-17T00:00:00\",\"customer_Id\":1,\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":4,\"name\":\"Contact 2.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1971-05-18T00:00:00\",\"customer_Id\":2,\"customer\":{\"id\":2,\"name\":\"Customer 2\"}}]"));
+                Is.EqualTo("[{\"id\":1,\"name\":\"Contact 1.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1970-05-15\",\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":2,\"name\":\"Contact 1.2\",\"function\":\"Secretary\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1980-06-16\",\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":3,\"name\":\"Contact 1.3\",\"function\":\"Sales Mgr\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1990-07-17\",\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":4,\"name\":\"Contact 2.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1971-05-18\",\"customer\":{\"id\":2,\"name\":\"Customer 2\"}}]"));
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Has.Length.EqualTo(4));
+        }
+
+        [Test]
+        public async Task TestGetAllOneToMany()
+        {
+            var result = await _client.Customers.ToArrayAsync();
+
+            Assert.That(
+                _client.Json, 
+                Is.EqualTo("[{\"id\":1,\"name\":\"Customer 1\",\"contacts\":[{\"id\":1,\"name\":\"Contact 1.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1970-05-15\"},{\"id\":2,\"name\":\"Contact 1.2\",\"function\":\"Secretary\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1980-06-16\"},{\"id\":3,\"name\":\"Contact 1.3\",\"function\":\"Sales Mgr\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1990-07-17\"}]},{\"id\":2,\"name\":\"Customer 2\",\"contacts\":[{\"id\":4,\"name\":\"Contact 2.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1971-05-18\"}]},{\"id\":3,\"name\":\"Customer 3\",\"contacts\":[]}]"));
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Has.Length.EqualTo(3));
+        }
+
+        [Test]
+        public async Task TestGetSelection()
+        {
+            var result = await _client.Contacts
+                .Select(x => new { x.Id, x.Name, x.DateOfBirth })
+                .Where(x => x.Name.StartsWith("Contact 1"))
+                .OrderByDescending(x => x.Name)
+                .Skip(1)
+                .ToArrayAsync();
+
+            Assert.That(
+                _client.Json, 
+                Is.EqualTo("[{\"id\":2,\"name\":\"Contact 1.2\",\"dateOfBirth\":\"1980-06-16\"},{\"id\":1,\"name\":\"Contact 1.1\",\"dateOfBirth\":\"1970-05-15\"}]"));
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Has.Length.EqualTo(2));
         }
 
         [Test]

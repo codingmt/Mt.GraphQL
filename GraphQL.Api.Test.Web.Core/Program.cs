@@ -1,4 +1,5 @@
 using Mt.GraphQL.Api.Server;
+using Mt.GraphQL.Api.Test.Web.Core.Helpers;
 using Mt.GraphQL.Api.Test.Web.Core.Models;
 using System.Web.Mvc;
 
@@ -6,18 +7,26 @@ namespace Mt.GraphQL.Api.Test.Web.Core
 {
     internal class Program
     {
-        internal static void Main(string[] args)
+        static Program()
         {
             GraphqlConfiguration.Configure<Customer>()
                 .AllowFilteringAndSorting(x => x.Id)
                 .AllowFilteringAndSorting(x => x.Name)
-                .ExcludeProperty(x => x.Contacts.First().Customer);
+                .ExcludeProperty(x => x.Contacts.First().Customer)
+                .ExcludeProperty(x => x.Contacts.First().Customer_Id);
             GraphqlConfiguration.Configure<Contact>()
                 .AllowFilteringAndSorting(x => x.Id)
                 .AllowFilteringAndSorting(x => x.Name)
                 .AllowFilteringAndSorting(x => x.Customer_Id)
+                .ApplyAttribute(
+                    x => x.DateOfBirth,
+                    () => new JsonDateTimeConverterAttribute { Format = "yyyy-MM-dd" })
+                .ExcludeProperty(x => x.Customer_Id)
                 .ExcludeProperty(x => x.Customer.Contacts);
+        }
 
+        internal static void Main(string[] args)
+        {
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.

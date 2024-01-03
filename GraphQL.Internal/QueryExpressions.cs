@@ -27,7 +27,6 @@ namespace Mt.GraphQL.Internal
         public QueryExpressions()
         {
             ParseSelect(string.Empty);
-            ParseOrderBy(string.Empty);
         }
 
         public string GetSelect()
@@ -175,9 +174,6 @@ namespace Mt.GraphQL.Internal
         {
             try
             {
-                if (string.IsNullOrEmpty(orderBy))
-                    orderBy = Configuration.GetTypeConfiguration<T>().DefaultOrderBy;
-
                 var parameter = Expression.Parameter(typeof(T), "x");
                 OrderBy.Clear();
                 OrderBy.AddRange(

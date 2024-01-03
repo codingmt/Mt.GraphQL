@@ -19,8 +19,11 @@ namespace System.Collections.Generic
         private static readonly MethodInfo _thenByDescendingMethod = GetMethodInfo(e => e.OrderBy(x => 1).ThenByDescending(x => 1));
         private static readonly MethodInfo _skipMethod = GetMethodInfo(x => x.Skip(0));
         private static readonly MethodInfo _takeMethod = GetMethodInfo(x => x.Take(0));
+        private static readonly MethodInfo _countMethod = GetMethodInfo(x => x.Count());
 
         private static MethodInfo GetMethodInfo(Expression<Func<IEnumerable<object>, IEnumerable<object>>> method) =>
+            (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
+        private static MethodInfo GetMethodInfo<TResult>(Expression<Func<IEnumerable<object>, TResult>> method) =>
             (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
 
         /// <summary>
@@ -53,6 +56,12 @@ namespace System.Collections.Generic
             {
                 var whereMethod = _whereMethod.MakeGenericMethod(typeof(T));
                 set = (IEnumerable)whereMethod.Invoke(null, new object[] { set, query.Expressions.FilterExpression.Compile() });
+            }
+
+            if (query.Count)
+            {
+                var countMethod = _countMethod.MakeGenericMethod(typeof(T));
+                return (int)countMethod.Invoke(null, new object[] { set });
             }
 
             var i = 0;

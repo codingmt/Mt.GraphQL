@@ -61,6 +61,18 @@ namespace Mt.GraphQL.Api
         /// </summary>
         public async Task<T[]> ToArrayAsync() =>
             JsonConvert.DeserializeObject<T[]>(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
+
+        /// <summary>
+        /// Gets the number of results.
+        /// </summary>
+        public async Task<int> CountAsync()
+        {
+            var query = ToString();
+            if (query.Length > 0)
+                query += "&";
+            query += "count=true";
+            return int.Parse(await this.GetClient().FetchDataAsync(typeof(T).Name, query));
+        }
     }
 
     /// <summary>

@@ -9,6 +9,7 @@ namespace Mt.GraphQL.Internal
         TQuery Clone<TQuery>() where TQuery : IQueryInternal<T>, new();
         int? Skip { get; set; }
         int? Take { get; set; }
+        bool Count { get; set; }
     }
 
     public interface IQueryInternal<T, TResult> : IQueryInternal<T>

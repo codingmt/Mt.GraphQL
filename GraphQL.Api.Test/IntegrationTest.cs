@@ -88,24 +88,6 @@ namespace Mt.GraphQL.Api.Test
         }
 
         [Test]
-        public async Task TestUnorderedError()
-        {
-            Exception e = null;
-            try
-            {
-                await _client.Customers.Take(1).ToArrayAsync();
-            }
-            catch (Exception ex)
-            {
-                e = ex;
-            }
-
-            Assert.That(e, Is.Not.Null);
-            Assert.That(e, Is.TypeOf<HttpStatusCodeException>());
-            Assert.That(e, Has.Message.EqualTo("HTTP BadRequest: You cannot use Skip or Take without OrderBy or OrderByDescending."));
-        }
-
-        [Test]
         public async Task TestNotIndexedError()
         {
             Exception e = null;
@@ -139,6 +121,21 @@ namespace Mt.GraphQL.Api.Test
 
             customers = await _client.Customers.Take(3).ToArrayAsync();
             Assert.That(customers, Has.Length.EqualTo(2));
+
+            GraphqlConfiguration.DefaultMaxPageSize = 0;
+            GraphqlConfiguration.Configure<Customer>().MaxPageSize(0);
+        }
+
+        [Test]
+        public async Task TestCount()
+        {
+            var nrOfCustomers = await _client.Customers.CountAsync();
+            Assert.That(nrOfCustomers, Is.EqualTo(3));
+
+            nrOfCustomers = await _client.Customers
+                .Where(x => x.Id == 1)
+                .CountAsync();
+            Assert.That(nrOfCustomers, Is.EqualTo(1));
         }
 
         private class TestWebApp : WebApplicationFactory<Web.Core.Program>

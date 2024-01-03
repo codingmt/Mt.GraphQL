@@ -19,8 +19,12 @@ namespace System.Linq
         private static readonly MethodInfo _thenByDescendingMethod = GetMethodInfo(q => q.OrderBy(x => 1).ThenByDescending(x => 1));
         private static readonly MethodInfo _skipMethod = GetMethodInfo(q => q.Skip(0));
         private static readonly MethodInfo _takeMethod = GetMethodInfo(q => q.Take(0));
+        private static readonly MethodInfo _countMethod = GetMethodInfo(q => q.Count());
 
         private static MethodInfo GetMethodInfo(Expression<Func<IQueryable<object>, IQueryable<object>>> method) =>
+            (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
+
+        private static MethodInfo GetMethodInfo<TResult>(Expression<Func<IQueryable<object>, TResult>> method) =>
             (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
 
         /// <summary>
@@ -47,8 +51,20 @@ namespace System.Linq
         private static object InnerApply<T>(IQueryable<T> source, IQueryInternal<T> query)
             where T : class
         {
+            var config = Mt.GraphQL.Internal.Configuration.GetTypeConfiguration<T>();
             if ((query.Take > 0 || query.Skip > 0) && !query.Expressions.OrderBy.Any())
-                throw new QueryException(query.ToString(), "You cannot use Skip or Take without OrderBy or OrderByDescending.");
+            {
+                if (string.IsNullOrEmpty(config.DefaultOrderBy))
+                    throw new QueryException(query.ToString(), "You cannot use Skip or Take without OrderBy or OrderByDescending.");
+
+                var member = typeof(T).GetProperty(config.DefaultOrderBy);
+                var parameter = Expression.Parameter(typeof(T));
+                query.Expressions.OrderBy.Add(
+                    (
+                        Expression.Lambda(Expression.Property(parameter, member), parameter),
+                        false
+                    ));
+            }
 
             IQueryable set = source;
 
@@ -56,6 +72,12 @@ namespace System.Linq
             {
                 var whereMethod = _whereMethod.MakeGenericMethod(typeof(T));
                 set = (IQueryable)whereMethod.Invoke(null, new object[] { set, query.Expressions.FilterExpression });
+            }
+
+            if (query.Count)
+            {
+                var countMethod = _countMethod.MakeGenericMethod(typeof(T));
+                return (int)countMethod.Invoke(null, new object[] { set });
             }
 
             var i = 0;
@@ -75,7 +97,7 @@ namespace System.Linq
                 set = (IQueryable)skipMethod.Invoke(null, new object[] { set, query.Skip.Value });
             }
 
-            var take = Mt.GraphQL.Internal.Configuration.GetTypeConfiguration<T>().GetPageSize(query.Take);
+            var take = config.GetPageSize(query.Take);
             if (take.HasValue)
             {
                 query.Take = take;

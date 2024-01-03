@@ -18,7 +18,7 @@ namespace Mt.GraphQL.Api.Server
             new TypeConfiguration<T>(InternalConfig.GetTypeConfiguration<T>(true));
 
         /// <summary>
-        /// The max page size used when not configured on a type.
+        /// The max page size used when not configured on a type. Use 0 to disable.
         /// </summary>
         public static int DefaultMaxPageSize 
         { 
@@ -162,6 +162,9 @@ namespace Mt.GraphQL.Api.Server
             return this;
         }
 
+        /// <summary>
+        /// Sets the property to use for ordering by default.
+        /// </summary>
         public TypeConfiguration<T> DefaultOrderBy<TMember>(Expression<Func<T, TMember>> member)
         {
             if (!(member.Body is MemberExpression m) ||

@@ -1,6 +1,7 @@
 ﻿using Mt.GraphQL.Internal;
 using Newtonsoft.Json.Linq;
 using System;
+using System.ComponentModel;
 using System.Text;
 
 namespace Mt.GraphQL.Api
@@ -103,6 +104,11 @@ namespace Mt.GraphQL.Api
             }
         }
 
+        /// <summary>
+        /// Indicates that the items should be counted.
+        /// </summary>
+        public bool Count { get; set; }
+
         QueryExpressions<T> IQueryInternal<T>.Expressions => _expressions;
 
         /// <summary>
@@ -137,6 +143,7 @@ namespace Mt.GraphQL.Api
         {
             destination.Expressions.SelectExpression = _expressions.SelectExpression;
             destination.Expressions.FilterExpression = _expressions.FilterExpression;
+            destination.Expressions.OrderBy.Clear();
             destination.Expressions.OrderBy.AddRange(_expressions.OrderBy);
             destination.Skip = Skip;
             destination.Take = Take;
@@ -172,6 +179,14 @@ namespace Mt.GraphQL.Api
                 if (sb.Length > 0)
                     sb.Append('&');
                 sb.Append($"filter={filter}");
+            }
+
+            if (Count)
+            {
+                if (sb.Length > 0)
+                    sb.Append('&');
+                sb.Append($"count=true");
+                return;
             }
 
             var orderBy = OrderBy;

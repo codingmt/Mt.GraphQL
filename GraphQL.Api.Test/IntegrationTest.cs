@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
+using Mt.GraphQL.Api.Server;
 using Mt.GraphQL.Api.Test.Web.Core.Models;
 
 namespace Mt.GraphQL.Api.Test
@@ -120,6 +121,24 @@ namespace Mt.GraphQL.Api.Test
             Assert.That(e, Is.Not.Null);
             Assert.That(e, Is.TypeOf<HttpStatusCodeException>());
             Assert.That(e, Has.Message.EqualTo("HTTP BadRequest: Error in OrderBy: Column Contact.Function cannot be used for filtering and ordering."));
+        }
+
+        [Test]
+        public async Task TestMaxPageSize()
+        {
+            var customers = await _client.Customers.Take(3).ToArrayAsync();
+            Assert.That(customers, Has.Length.EqualTo(3));
+
+            GraphqlConfiguration.DefaultMaxPageSize = 1;
+            customers = await _client.Customers.ToArrayAsync();
+            Assert.That(customers, Has.Length.EqualTo(1));
+
+            GraphqlConfiguration.Configure<Customer>().MaxPageSize(2);
+            customers = await _client.Customers.ToArrayAsync();
+            Assert.That(customers, Has.Length.EqualTo(2));
+
+            customers = await _client.Customers.Take(3).ToArrayAsync();
+            Assert.That(customers, Has.Length.EqualTo(2));
         }
 
         private class TestWebApp : WebApplicationFactory<Web.Core.Program>

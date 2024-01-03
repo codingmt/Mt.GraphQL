@@ -16,6 +16,15 @@ namespace Mt.GraphQL.Api.Server
         /// </summary>
         public static TypeConfiguration<T> Configure<T>() where T : class =>
             new TypeConfiguration<T>(InternalConfig.GetTypeConfiguration<T>(true));
+
+        /// <summary>
+        /// The max page size used when not configured on a type.
+        /// </summary>
+        public static int DefaultMaxPageSize 
+        { 
+            get => InternalConfig.DefaultMaxPageSize; 
+            set => InternalConfig.DefaultMaxPageSize = value; 
+        }
     }
 
     /// <summary>
@@ -139,6 +148,29 @@ namespace Mt.GraphQL.Api.Server
                 if (newExpression.Arguments.Any(a => !(a is ConstantExpression)))
                     throw new ArgumentException("Argument attribute constructor arguments can only contain constants.");
             }
+        }
+
+        /// <summary>
+        /// Sets the maximum page size for a type. Set to 0 to disable max page size.
+        /// </summary>
+        public TypeConfiguration<T> MaxPageSize(int maxPageSize)
+        {
+            if (maxPageSize < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxPageSize));
+
+            _internalTypeConfig.MaxPageSize = maxPageSize;
+            return this;
+        }
+
+        public TypeConfiguration<T> DefaultOrderBy<TMember>(Expression<Func<T, TMember>> member)
+        {
+            if (!(member.Body is MemberExpression m) ||
+                (m.Expression != member.Parameters[0]))
+                throw new ArgumentException($"Argument member must select a property on type {typeof(T).Name}.");
+
+            _internalTypeConfig.DefaultOrderBy = m.Member.Name;
+
+            return this;
         }
     }
 }

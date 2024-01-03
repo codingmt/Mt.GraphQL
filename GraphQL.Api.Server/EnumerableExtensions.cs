@@ -72,10 +72,12 @@ namespace System.Collections.Generic
                 set = (IEnumerable)skipMethod.Invoke(null, new object[] { set, query.Skip.Value });
             }
 
-            if (query.Take.HasValue)
+            var take = Mt.GraphQL.Internal.Configuration.GetTypeConfiguration<T>().GetPageSize(query.Take);
+            if (take.HasValue)
             {
+                query.Take = take;
                 var takeMethod = _takeMethod.MakeGenericMethod(typeof(T));
-                set = (IEnumerable)takeMethod.Invoke(null, new object[] { set, query.Take.Value });
+                set = (IEnumerable)takeMethod.Invoke(null, new object[] { set, take });
             }
 
             var selectExpression = query.Expressions.GetActualSelectExpression();

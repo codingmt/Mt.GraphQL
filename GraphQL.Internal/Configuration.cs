@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -12,6 +13,19 @@ namespace Mt.GraphQL.Internal
     {
         private static readonly ConcurrentDictionary<Type, InternalTypeConfig> _typeConfigurations 
             = new ConcurrentDictionary<Type, InternalTypeConfig>();
+
+        private static int _defaultMaxPageSize;
+        public static int DefaultMaxPageSize
+        {
+            get => _defaultMaxPageSize;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value));
+
+                _defaultMaxPageSize = value;
+            }
+        }
 
         public static InternalTypeConfig GetTypeConfiguration<T>(bool configured = false) =>
             GetTypeConfiguration(typeof(T), configured);
@@ -44,11 +58,17 @@ namespace Mt.GraphQL.Internal
             private readonly List<(string columnName, Expression attribute)> _columnAttributes = new List<(string, Expression)> ();
             
             public bool Configured { get; }
+            public int? MaxPageSize { get; set; }
+            public string DefaultOrderBy { get; set; }
 
             public InternalTypeConfig(Type type, bool configured)
             {
                 _type = type;
                 Configured = configured;
+
+                DefaultOrderBy = type.GetProperties()
+                    .FirstOrDefault(p => p.GetCustomAttribute<KeyAttribute>() != null)
+                    ?.Name;
             }
 
             public bool IsColumnIndexed(string name) => 
@@ -62,6 +82,16 @@ namespace Mt.GraphQL.Internal
 
             public void ApplyAttribute(string columnName, Expression attribute) =>
                 _columnAttributes.Add((columnName, attribute));
+
+            public int? GetPageSize(int? take)
+            {
+                var maxPageSize = MaxPageSize ?? DefaultMaxPageSize;
+                return maxPageSize == 0 
+                    ? take 
+                    : maxPageSize > take 
+                        ? take
+                        : maxPageSize;
+            }
 
             internal Type GetResultType() => _resultType ?? (_resultType = ConstructType(_type));
 

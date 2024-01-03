@@ -1,6 +1,5 @@
-﻿using System.Collections;
+﻿using Mt.GraphQL.Internal;
 using System.Linq.Expressions;
-using Mt.GraphQL.Internal;
 using System.Text.Json;
 
 namespace Mt.GraphQL.Api.Test

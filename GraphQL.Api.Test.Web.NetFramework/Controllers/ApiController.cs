@@ -1,6 +1,5 @@
 ﻿using Mt.GraphQL.Api.Test.Web.NetFramework.EF;
 using Mt.GraphQL.Api.Test.Web.NetFramework.Models;
-using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Web.Http;

@@ -1,6 +1,5 @@
 ﻿using Mt.GraphQL.Api;
 using Mt.GraphQL.Internal;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;

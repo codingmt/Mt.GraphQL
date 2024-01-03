@@ -30,9 +30,9 @@ namespace System.Collections.Generic
         /// <typeparam name="TResult">The type of <see cref="IEnumerable{T}"/> result.</typeparam>
         /// <param name="source">The source to apply the <paramref name="query"/> to.</param>
         /// <param name="query">The query to apply to the <paramref name="source"/>.</param>
-        public static IEnumerable<TResult> Apply<T, TResult>(this IEnumerable<T> source, Query<T, TResult> query)
+        public static object Apply<T, TResult>(this IEnumerable<T> source, Query<T, TResult> query)
             where T : class =>
-            (IEnumerable<TResult>)InnerApply(source, query);
+            InnerApply(source, query);
 
         /// <summary>
         /// Apply the <paramref name="query"/> to the <paramref name="source"/>.
@@ -40,19 +40,19 @@ namespace System.Collections.Generic
         /// <typeparam name="T">The type of <see cref="IEnumerable{T}"/> <paramref name="source"/>.</typeparam>
         /// <param name="source">The source to apply the <paramref name="query"/> to.</param>
         /// <param name="query">The query to apply to the <paramref name="source"/>.</param>
-        public static IEnumerable Apply<T>(this IEnumerable<T> source, Query<T> query)
+        public static object Apply<T>(this IEnumerable<T> source, Query<T> query)
             where T : class => 
             InnerApply(source, query);
 
-        private static IEnumerable InnerApply<T>(IEnumerable<T> source, IQueryInternal<T> query)
+        private static object InnerApply<T>(IEnumerable<T> source, IQueryInternal<T> query)
             where T : class
         {
-            IEnumerable result = source;
+            IEnumerable set = source;
 
             if (query.Expressions.FilterExpression != null)
             {
                 var whereMethod = _whereMethod.MakeGenericMethod(typeof(T));
-                result = (IEnumerable)whereMethod.Invoke(null, new object[] { result, query.Expressions.FilterExpression.Compile() });
+                set = (IEnumerable)whereMethod.Invoke(null, new object[] { set, query.Expressions.FilterExpression.Compile() });
             }
 
             var i = 0;
@@ -62,25 +62,30 @@ namespace System.Collections.Generic
                     ? (descending ? _orderByDescendingMethod : _orderByMethod)
                     : (descending ? _thenByDescendingMethod : _thenByMethod);
                 var orderMethod = orderMethodInfo.MakeGenericMethod(typeof(T), member.ReturnType);
-                result = (IEnumerable)orderMethod.Invoke(null, new object[] { result, member.Compile() });
+                set = (IEnumerable)orderMethod.Invoke(null, new object[] { set, member.Compile() });
                 i++;
             }
 
             if (query.Skip.HasValue)
             {
                 var skipMethod = _skipMethod.MakeGenericMethod(typeof(T));
-                result = (IEnumerable)skipMethod.Invoke(null, new object[] { result, query.Skip.Value });
+                set = (IEnumerable)skipMethod.Invoke(null, new object[] { set, query.Skip.Value });
             }
 
             if (query.Take.HasValue)
             {
                 var takeMethod = _takeMethod.MakeGenericMethod(typeof(T));
-                result = (IEnumerable)takeMethod.Invoke(null, new object[] { result, query.Take.Value });
+                set = (IEnumerable)takeMethod.Invoke(null, new object[] { set, query.Take.Value });
             }
 
             var selectExpression = query.Expressions.GetActualSelectExpression();
             var selectMethod = _selectMethod.MakeGenericMethod(typeof(T), selectExpression.ReturnType);
-            result = (IEnumerable)selectMethod.Invoke(null, new object[] { result, selectExpression.Compile() });
+            set = (IEnumerable)selectMethod.Invoke(null, new object[] { set, selectExpression.Compile() });
+
+            var result = new List<object>();
+            var enumerator = set.GetEnumerator();
+            while (enumerator.MoveNext())
+                result.Add(enumerator.Current);
 
             return result;
         }

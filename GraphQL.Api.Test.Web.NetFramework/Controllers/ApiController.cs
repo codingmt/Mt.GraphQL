@@ -30,7 +30,7 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework.Controllers
                         new
                         {
                             query,
-                            data = getSet(context).Apply(query).ToArray()
+                            data = getSet(context).Apply(query)
                         });
                 }
             }

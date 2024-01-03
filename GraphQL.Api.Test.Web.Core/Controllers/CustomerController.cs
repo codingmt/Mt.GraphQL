@@ -19,7 +19,7 @@ namespace Mt.GraphQL.Api.Test.Web.Core.Controllers
             try
             {
                 using var context = new DbContext();
-                return Ok(context.Customers.Apply(query).ToArray());
+                return Ok(context.Customers.Apply(query));
             }
             catch (QueryException ex)
             {

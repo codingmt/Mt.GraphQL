@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,14 +51,20 @@ namespace Mt.GraphQL.Internal
                         return ( expr, type: t, name: propName, attributes );
                     })
                     .ToArray();
-                if (properties.Length == 0)
-                    SelectExpression = null;
-                else
-                { 
-                    var type = TypeBuilder.GetType(typeof(T).Name, properties.Select(p => (p.name, p.type, p.attributes)).ToArray());
-                    SelectExpression = Expression.Lambda(
-                        CreateMemberInit(type, parameter, properties.Select(p => (p.expr, p.type, p.name)).ToArray()),
-                        parameter);
+                switch (properties.Length)
+                {
+                    case 0:
+                        SelectExpression = null;
+                        break;
+                    case 1:
+                        SelectExpression = properties[0].expr;
+                        break;
+                    default:
+                        var type = TypeBuilder.GetType(typeof(T).Name, properties.Select(p => (p.name, p.type, p.attributes)).ToArray());
+                        SelectExpression = Expression.Lambda(
+                            CreateMemberInit(type, parameter, properties.Select(p => (p.expr, p.type, p.name)).ToArray()),
+                            parameter);
+                        break;
                 }
             }
             catch (ConfigurationException ex)

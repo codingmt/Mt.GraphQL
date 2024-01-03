@@ -89,7 +89,7 @@ namespace Mt.GraphQL.Api.Test
         [Test]
         public async Task TestUnorderedError()
         {
-            Exception? e = null;
+            Exception e = null;
             try
             {
                 await _client.Customers.Take(1).ToArrayAsync();
@@ -107,7 +107,7 @@ namespace Mt.GraphQL.Api.Test
         [Test]
         public async Task TestNotIndexedError()
         {
-            Exception? e = null;
+            Exception e = null;
             try
             {
                 await _client.Contacts.OrderBy(x => x.Function).ToArrayAsync();
@@ -129,7 +129,7 @@ namespace Mt.GraphQL.Api.Test
         {
             private readonly HttpClient _httpClient;
 
-            public string? Json { get; private set; }
+            public string Json { get; private set; }
 
             public TestClient(HttpClient httpClient)
             {

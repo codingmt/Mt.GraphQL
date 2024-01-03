@@ -38,7 +38,7 @@ namespace Mt.GraphQL.Api.Test
 
         [Test]
         [TestCase("Bla", "QueryException", "Property Bla was not found on type Entity")]
-        [TestCase("Related_Id is null", "QueryException", "Unknown operator is")]
+        [TestCase("Parent_Id is null", "QueryException", "Unknown operator is")]
         [TestCase("Id eq 'five'", "QueryException", "Could not parse Int32 constant with value: 'five'")]
         [TestCase("(Id eq 1", "QueryException", "Closing parenthesis not found")]
         [TestCase("Id eq 1)", "QueryException", "Could not parse filter from position 7")]

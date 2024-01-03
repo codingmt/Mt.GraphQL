@@ -96,14 +96,8 @@ namespace Mt.GraphQL.Api.Test
 
             Assert.That(_client.Json, Is.EqualTo(@"[
   {
-    ""Id"": 0,
-    ""Name"": ""Related to C"",
-    ""Description"": null,
-    ""Type"": null,
-    ""IsCustomer"": false,
-    ""Date"": null,
-    ""Related_Id"": null,
-    ""Related"": null
+    ""id"": 0,
+    ""name"": ""Parent of C""
   },
   null
 ]"));
@@ -112,14 +106,14 @@ namespace Mt.GraphQL.Api.Test
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Length.EqualTo(2));
-                Assert.That(result[0].Name, Is.EqualTo("Related to C"));
+                Assert.That(result[0].Name, Is.EqualTo("Parent of C"));
                 Assert.That(result[1], Is.Null);
             });
         }
 
         private class TestClient : ClientBase
         {
-            public string? Json { get; private set; }
+            public string Json { get; private set; }
 
             public TestClient()
             {

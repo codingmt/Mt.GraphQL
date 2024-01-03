@@ -28,7 +28,7 @@ namespace Mt.GraphQL.Api.Test
                 throw new Exception($"Mismatch!\nExpected: {expression}\nActually: {filterExpression?.ToString()}");
         }
 
-        public static void Throws(this Func<Query<Entity>> queryCreator, string? exceptionType = null, string? message = null)
+        public static void Throws(this Func<Query<Entity>> queryCreator, string exceptionType = null, string message = null)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace Mt.GraphQL.Api.Test
             throw new Exception($"Expected exception but the query did not throw.");
         }
 
-        public static string ToJson(this IEnumerable source) =>
+        public static string ToJson(this object source) =>
             JsonSerializer.Serialize(
                 source, 
                 new JsonSerializerOptions 
@@ -55,7 +55,7 @@ namespace Mt.GraphQL.Api.Test
                     WriteIndented = true 
                 });
 
-        public static T? CastIfNotNull<T>(this string? value)
+        public static T? CastIfNotNull<T>(this string value)
             where T: struct =>
             value == null ? null : (T)Convert.ChangeType(value, typeof(T));
     }

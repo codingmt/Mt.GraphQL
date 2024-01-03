@@ -23,7 +23,7 @@ namespace Mt.GraphQL.Api.Test.Web.Core.Helpers
             public string format;
 
             public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-                DateTime.ParseExact(reader.GetString()!, format, CultureInfo.InvariantCulture);
+                DateTime.ParseExact(reader.GetString(), format, CultureInfo.InvariantCulture);
 
             public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options) => 
                 writer.WriteStringValue(value.ToString(format, CultureInfo.InvariantCulture));
@@ -37,7 +37,7 @@ namespace Mt.GraphQL.Api.Test.Web.Core.Helpers
             {
                 var s = reader.GetString();
                 return string.IsNullOrEmpty(s) 
-                    ? (DateTime?) null
+                    ? null
                     : DateTime.ParseExact(s, format, CultureInfo.InvariantCulture);
             }
 

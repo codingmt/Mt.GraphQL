@@ -5,7 +5,25 @@
     <AssemblyName>Mt.$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>Mt.GraphQL.Api</RootNamespace>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Mt.GraphQL API Client</Title>
+    <Authors>codingmt</Authors>
+    <Company>Marcel Timmerman IT Consultancy</Company>
+    <Description>Client library for APIs set up using package Mt.GraphQL.Api.Server, allowing to create GraphQL queries using Linq-like expressions.</Description>
+    <Copyright>Marcel Timmerman</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/codingmt/Mt.GraphQL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/codingmt/Mt.GraphQL</RepositoryUrl>
+    <PackageTags>graphql</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\GraphQL.Api\GraphQL.Api.csproj" />

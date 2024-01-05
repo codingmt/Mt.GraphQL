@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Mt.$(MSBuildProjectName)</AssemblyName>
-
     <RootNamespace>Mt.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

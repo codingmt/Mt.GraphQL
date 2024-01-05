@@ -16,6 +16,7 @@
     <RepositoryUrl>https://github.com/codingmt/Mt.GraphQL</RepositoryUrl>
     <PackageTags>graphql</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,7 +27,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GraphQL.Api\GraphQL.Api.csproj" />
+    <ProjectReference Include="..\GraphQL.Api\GraphQL.Api.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
+  <Target Name="PrePackage" AfterTargets="Build">
+    <ItemGroup>
+      <None Include="$(TargetDir)\Mt.GraphQL.Api.dll;$(TargetDir)\Mt.GraphQL.Api.xml;$(TargetDir)\Mt.GraphQL.Api.pdb;$(TargetDir)\Mt.GraphQL.Internal.*">
+        <Pack>true</Pack>
+        <PackagePath>\lib\netstandard2.0</PackagePath>
+      </None>
+    </ItemGroup>
+  </Target>
 </Project>

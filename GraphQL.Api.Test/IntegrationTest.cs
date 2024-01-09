@@ -88,6 +88,14 @@ namespace Mt.GraphQL.Api.Test
         }
 
         [Test]
+        public async Task TestRestrictedModel()
+        {
+            await _client.RestrictedCustomers.Where(x => x.Id == 1).ToArrayAsync();
+
+            Assert.That(_client.RequestUrl, Is.EqualTo("/Customer?select=Id,Name&filter=Id eq 1"));
+        }
+
+        [Test]
         public async Task TestNotIndexedError()
         {
             Exception e = null;
@@ -145,6 +153,8 @@ namespace Mt.GraphQL.Api.Test
         {
             private readonly HttpClient _httpClient;
 
+            public string RequestUrl { get; set; }
+
             public string Json { get; private set; }
 
             public TestClient(HttpClient httpClient)
@@ -156,6 +166,8 @@ namespace Mt.GraphQL.Api.Test
 
             private async Task<string> ProcessRequest(Configuration configuration, HttpRequestMessage httpRequestMessage)
             {
+                RequestUrl = httpRequestMessage.RequestUri.OriginalString;
+
                 var response = await _httpClient.SendAsync(httpRequestMessage);
                 if (!response.IsSuccessStatusCode)
                     throw new HttpStatusCodeException(response.StatusCode, response.ReasonPhrase, await response.Content.ReadAsStringAsync());
@@ -168,6 +180,14 @@ namespace Mt.GraphQL.Api.Test
             public ClientQuery<Customer> Customers => CreateQuery<Customer>();
 
             public ClientQuery<Contact> Contacts => CreateQuery<Contact>();
+
+            public ClientQuery<RestrictedCustomer> RestrictedCustomers => CreateQuery<RestrictedCustomer>(true, "Customer");
+        }
+
+        private class RestrictedCustomer
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
         }
     }
 }

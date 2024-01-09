@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace Mt.GraphQL.Internal
 {
-    internal static class ReflectionExtensions
+    public static class ReflectionExtensions
     {
         public static IEnumerable<Expression> GetAttributeExpressions(this PropertyInfo propertyInfo) =>
             propertyInfo.GetCustomAttributesData()

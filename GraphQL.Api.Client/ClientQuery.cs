@@ -10,6 +10,7 @@ namespace Mt.GraphQL.Api
     internal interface IClientQuery
     {
         ClientBase Client { get; set; }
+        string Entity { get; set; }
     }
 
     /// <summary>
@@ -20,6 +21,7 @@ namespace Mt.GraphQL.Api
         where T : class
     {
         ClientBase IClientQuery.Client { get; set; }
+        string IClientQuery.Entity { get; set; }
 
         /// <summary>
         /// Clones the instance.
@@ -47,20 +49,23 @@ namespace Mt.GraphQL.Api
         {
             base.CopyPropertiesTo(destination);
             if (destination is IClientQuery cq)
+            {
+                cq.Entity = ((IClientQuery)this).Entity;
                 cq.CopyClientFrom(this);
+            }
         }
 
         /// <summary>
         /// Get a list of results.
         /// </summary>
         public async Task<List<T>> ToListAsync() =>
-            JsonConvert.DeserializeObject<List<T>>(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
+            JsonConvert.DeserializeObject<List<T>>(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
 
         /// <summary>
         /// Get an array of results.
         /// </summary>
         public async Task<T[]> ToArrayAsync() =>
-            JsonConvert.DeserializeObject<T[]>(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
+            JsonConvert.DeserializeObject<T[]>(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
 
         /// <summary>
         /// Gets the number of results.
@@ -71,7 +76,7 @@ namespace Mt.GraphQL.Api
             if (query.Length > 0)
                 query += "&";
             query += "count=true";
-            return int.Parse(await this.GetClient().FetchDataAsync(typeof(T).Name, query));
+            return int.Parse(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, query));
         }
     }
 
@@ -84,6 +89,7 @@ namespace Mt.GraphQL.Api
         where T : class
     {
         ClientBase IClientQuery.Client { get; set; }
+        string IClientQuery.Entity { get; set; }
 
         /// <summary>
         /// Copies the querie's properties to <paramref name="destination"/>.
@@ -93,19 +99,22 @@ namespace Mt.GraphQL.Api
         {
             base.CopyPropertiesTo(destination);
             if (destination is IClientQuery cq)
+            {
+                cq.Entity = ((IClientQuery)this).Entity;
                 cq.CopyClientFrom(this);
+            }
         }
 
         /// <summary>
         /// Get a list of results.
         /// </summary>
         public async Task<List<TResult>> ToListAsync() =>
-            this.ParseJson(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString())).ToList();
+            this.ParseJson(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString())).ToList();
 
         /// <summary>
         /// Get an array of results.
         /// </summary>
         public async Task<TResult[]> ToArrayAsync() =>
-            this.ParseJson(await this.GetClient().FetchDataAsync(typeof(T).Name, ToString()));
+            this.ParseJson(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
     }
 }

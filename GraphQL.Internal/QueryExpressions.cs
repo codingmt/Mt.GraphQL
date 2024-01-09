@@ -12,6 +12,7 @@ namespace Mt.GraphQL.Internal
         public LambdaExpression SelectExpression { get; set; }
         public LambdaExpression FilterExpression { get; set; }
         public List<(LambdaExpression member, bool descending)> OrderBy { get; } = new List<(LambdaExpression member, bool descending)>();
+        public bool RestrictToModel { get; set; }
     }
 
     public class QueryExpressions<T> : QueryExpressions

@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using Mt.GraphQL.Internal;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Mt.GraphQL.Api
@@ -43,11 +44,19 @@ namespace Mt.GraphQL.Api
         /// Creates a new <see cref="ClientQuery{T}"/> of type <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">The type of <see cref="Query{T}"/>.</typeparam>
-        protected ClientQuery<T> CreateQuery<T>()
+        /// <param name="restrictToModel">
+        ///   If <typeparamref name="T"/> has less properties than the server model, setting this argument to true assures that only 
+        ///   <typeparamref name="T"/>'s properties are selected. Make sure all <typeparamref name="T"/>'s properties are available 
+        ///   on the server model.
+        /// </param>
+        /// <param name="entity">The name of the server's model. Defaults to <typeparamref name="T"/>'s Name.</param>
+        protected ClientQuery<T> CreateQuery<T>(bool restrictToModel = false, string entity = null)
             where T : class
         {
             var result = new ClientQuery<T>();
             result.SetClient(this);
+            ((IClientQuery)result).Entity = entity ?? typeof(T).Name;
+            result.AsQueryInternal().Expressions.RestrictToModel = restrictToModel;
             return result;
         }
 

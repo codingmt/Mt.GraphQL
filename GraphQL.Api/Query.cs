@@ -1,7 +1,7 @@
 ﻿using Mt.GraphQL.Internal;
 using Newtonsoft.Json.Linq;
 using System;
-using System.ComponentModel;
+using System.Linq;
 using System.Text;
 
 namespace Mt.GraphQL.Api
@@ -145,6 +145,7 @@ namespace Mt.GraphQL.Api
             destination.Expressions.FilterExpression = _expressions.FilterExpression;
             destination.Expressions.OrderBy.Clear();
             destination.Expressions.OrderBy.AddRange(_expressions.OrderBy);
+            destination.Expressions.RestrictToModel = _expressions.RestrictToModel;
             destination.Skip = Skip;
             destination.Take = Take;
         }
@@ -166,6 +167,8 @@ namespace Mt.GraphQL.Api
         protected virtual void AddToString(StringBuilder sb)
         {
             var select = Select;
+            if (string.IsNullOrEmpty(select) && _expressions.RestrictToModel)
+                select = string.Join(",", typeof(T).GetPropertiesInheritedFirst().Select(p => p.Name));
             if (!string.IsNullOrWhiteSpace(select))
             {
                 if (sb.Length > 0)

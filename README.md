@@ -17,6 +17,7 @@ var result = await client.Contacts
     .OrderByDescending(x => x.Name)
     .Skip(1)
     .ToArrayAsync();
+// Uses query string: ?select=Id,Name,DateOfBirth&filter=startsWith(Name,'Contact 1')&orderBy=Id desc&skip=1
 ```
 
 # Server
@@ -100,13 +101,13 @@ To customize the way entities can be queried, they can be configured in the star
 - which properties should be hidden.
 ```c#
 GraphqlConfiguration.DefaultMaxPageSize = 200;
+GraphqlConfiguration.ConfigureBase<ModelBase>()
+    .AllowFilteringAndSorting(x => x.Id);
 GraphqlConfiguration.Configure<Customer>()
-    .AllowFilteringAndSorting(x => x.Id)
     .AllowFilteringAndSorting(x => x.Name)
     .ExcludeProperty(x => x.Contacts.First().Customer)
     .ExcludeProperty(x => x.Contacts.First().Customer_Id);
 GraphqlConfiguration.Configure<Contact>()
-    .AllowFilteringAndSorting(x => x.Id)
     .AllowFilteringAndSorting(x => x.Name)
     .AllowFilteringAndSorting(x => x.Customer_Id)
     .ApplyAttribute(

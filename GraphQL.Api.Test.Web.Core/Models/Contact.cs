@@ -1,12 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Mt.GraphQL.Api.Test.Web.Core.Models
 {
-    public class Contact
+    public class Contact : ModelBase
     {
-        [Key]
-        public int Id { get; set; }
         public string Name { get; set; }
         public string Function { get; set; }
         public bool IsAuthorizedToSign { get; set; }

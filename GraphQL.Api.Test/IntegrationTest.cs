@@ -57,7 +57,7 @@ namespace Mt.GraphQL.Api.Test
             var result = await _client.Contacts
                 .Select(x => new { x.Id, x.Name, x.DateOfBirth })
                 .Where(x => x.Name.StartsWith("Contact 1"))
-                .OrderByDescending(x => x.Name)
+                .OrderByDescending(x => x.Id)
                 .Skip(1)
                 .ToArrayAsync();
 

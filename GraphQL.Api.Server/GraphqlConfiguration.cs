@@ -18,6 +18,12 @@ namespace Mt.GraphQL.Api.Server
             new TypeConfiguration<T>(InternalConfig.GetTypeConfiguration<T>(true));
 
         /// <summary>
+        /// Configures a type for GraphQL.
+        /// </summary>
+        public static TypeConfiguration<T> ConfigureBase<T>() where T : class =>
+            new TypeConfiguration<T>(InternalConfig.GetBaseTypeConfiguration<T>());
+
+        /// <summary>
         /// The max page size used when not configured on a type. Use 0 to disable.
         /// </summary>
         public static int DefaultMaxPageSize 

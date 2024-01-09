@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -19,5 +20,20 @@ namespace Mt.GraphQL.Internal
                                 Expression.Bind(na.MemberInfo, Expression.Constant(na.TypedValue.Value, na.TypedValue.ArgumentType))))
                         : construct;
                 });
+
+        public static PropertyInfo[] GetPropertiesInheritedFirst(this Type fromType)
+        {
+            var declaringTypes = new Dictionary<Type, int>();
+            var t = fromType;
+            while (t != typeof(object))
+            {
+                declaringTypes.Add(t, declaringTypes.Count);
+                t = t.BaseType;
+            }
+
+            return fromType.GetProperties()
+                .OrderByDescending(p => declaringTypes[p.DeclaringType])
+                .ToArray();
+        }
     }
 }

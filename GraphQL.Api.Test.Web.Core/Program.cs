@@ -9,13 +9,13 @@ namespace Mt.GraphQL.Api.Test.Web.Core
     {
         static Program()
         {
+            GraphqlConfiguration.ConfigureBase<ModelBase>()
+                .AllowFilteringAndSorting(x => x.Id);
             GraphqlConfiguration.Configure<Customer>()
-                .AllowFilteringAndSorting(x => x.Id)
                 .AllowFilteringAndSorting(x => x.Name)
                 .ExcludeProperty(x => x.Contacts.First().Customer)
                 .ExcludeProperty(x => x.Contacts.First().Customer_Id);
             GraphqlConfiguration.Configure<Contact>()
-                .AllowFilteringAndSorting(x => x.Id)
                 .AllowFilteringAndSorting(x => x.Name)
                 .AllowFilteringAndSorting(x => x.Customer_Id)
                 .ApplyAttribute(

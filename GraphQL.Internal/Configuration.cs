@@ -13,6 +13,8 @@ namespace Mt.GraphQL.Internal
     {
         private static readonly ConcurrentDictionary<Type, InternalTypeConfig> _typeConfigurations 
             = new ConcurrentDictionary<Type, InternalTypeConfig>();
+        private static readonly ConcurrentDictionary<Type, InternalTypeConfig> _baseTypeConfigurations 
+            = new ConcurrentDictionary<Type, InternalTypeConfig>();
 
         private static int _defaultMaxPageSize;
         public static int DefaultMaxPageSize
@@ -37,7 +39,25 @@ namespace Mt.GraphQL.Internal
                     if (t.Namespace == TypeBuilder.Namespace)
                         throw new Exception("Creating a config for a constructed type.");
 
-                    return new InternalTypeConfig(t, configured);
+                    var baseConfigurations = _baseTypeConfigurations
+                        .Where(x => x.Key.IsAssignableFrom(type))
+                        .Select(x => x.Value)
+                        .ToArray();
+
+                    return new InternalTypeConfig(t, configured || baseConfigurations.Any(), baseConfigurations);
+                });
+
+        public static InternalTypeConfig GetBaseTypeConfiguration<T>() =>
+            GetBaseTypeConfiguration(typeof(T));
+
+        private static InternalTypeConfig GetBaseTypeConfiguration(Type type) =>
+            _baseTypeConfigurations.GetOrAdd(type,
+                t =>
+                {
+                    if (t.Namespace == TypeBuilder.Namespace)
+                        throw new Exception("Creating a config for a constructed type.");
+
+                    return new InternalTypeConfig(t, true);
                 });
 
         public static void ValidateMemberIsIndexed(PropertyInfo property)
@@ -61,14 +81,19 @@ namespace Mt.GraphQL.Internal
             public int? MaxPageSize { get; set; }
             public string DefaultOrderBy { get; set; }
 
-            public InternalTypeConfig(Type type, bool configured)
+            public InternalTypeConfig(Type type, bool configured, params InternalTypeConfig[] copyFrom)
             {
                 _type = type;
                 Configured = configured;
 
+                _indexedColumns = copyFrom.SelectMany(x => x._indexedColumns).Distinct().ToList();
+                _excludedColumns = copyFrom.SelectMany(x => x._excludedColumns).Distinct().ToList();
+                _columnAttributes = copyFrom.SelectMany(x => x._columnAttributes).ToList();
+                MaxPageSize = copyFrom.LastOrDefault(x => x.MaxPageSize.HasValue)?.MaxPageSize;
+
                 DefaultOrderBy = type.GetProperties()
                     .FirstOrDefault(p => p.GetCustomAttribute<KeyAttribute>() != null)
-                    ?.Name;
+                    ?.Name ?? copyFrom.LastOrDefault(x => !string.IsNullOrEmpty(x.DefaultOrderBy))?.DefaultOrderBy;
             }
 
             public bool IsColumnIndexed(string name) => 
@@ -100,7 +125,7 @@ namespace Mt.GraphQL.Internal
                 parentTypes = parentTypes ?? new List<Type> ();
                 parentTypes.Add(type);
 
-                var properties = type.GetProperties()
+                var properties = type.GetPropertiesInheritedFirst()
                     .Where(p => !_excludedColumns.Any(c => c.Equals($"{path}{p.Name}", StringComparison.OrdinalIgnoreCase)))
                     .Select(p => ( name: p.Name, type: p.PropertyType, attributes: p.GetAttributeExpressions().ToList() ))
                     .ToArray();

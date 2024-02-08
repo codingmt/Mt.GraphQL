@@ -3,9 +3,11 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace Mt.GraphQL.Internal
 {
@@ -71,11 +73,8 @@ namespace Mt.GraphQL.Internal
         public class InternalTypeConfig
         {
             private readonly Type _type;
-            private Type _resultType = null;
-
-            private readonly List<string> _indexedColumns = new List<string>();
-            private readonly List<string> _excludedColumns = new List<string>();
-            private readonly List<(string columnName, Expression attribute)> _columnAttributes = new List<(string, Expression)> ();
+            private readonly Dictionary<string, PropertyConfig> _properties;
+            private readonly List<string> _excludedColumns = new List<string>(); // can contain nested columns (Customer.Contacts)
             
             public bool Configured { get; }
             public int? MaxPageSize { get; set; }
@@ -84,11 +83,19 @@ namespace Mt.GraphQL.Internal
             public InternalTypeConfig(Type type, bool configured, params InternalTypeConfig[] copyFrom)
             {
                 _type = type;
+                _properties = type.GetPropertiesInheritedFirst()
+                    .Select(p => new PropertyConfig(p))
+                    .ToDictionary(p => p.Property.Name.ToLower());
                 Configured = configured;
 
-                _indexedColumns = copyFrom.SelectMany(x => x._indexedColumns).Distinct().ToList();
-                _excludedColumns = copyFrom.SelectMany(x => x._excludedColumns).Distinct().ToList();
-                _columnAttributes = copyFrom.SelectMany(x => x._columnAttributes).ToList();
+                foreach (var property in copyFrom.SelectMany(x => x._properties.Values))
+                {
+                    var p = _properties[property.Name.ToLower()];
+                    p.IsIndexed |= property.IsIndexed;
+                    p.IsExtension |= property.IsExtension;
+                    p.Attributes.AddRange(property.Attributes);
+                }
+
                 MaxPageSize = copyFrom.LastOrDefault(x => x.MaxPageSize.HasValue)?.MaxPageSize;
 
                 DefaultOrderBy = type.GetProperties()
@@ -96,17 +103,25 @@ namespace Mt.GraphQL.Internal
                     ?.Name ?? copyFrom.LastOrDefault(x => !string.IsNullOrEmpty(x.DefaultOrderBy))?.DefaultOrderBy;
             }
 
-            public bool IsColumnIndexed(string name) => 
-                _indexedColumns.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase));
+            public bool IsColumnIndexed(string name) =>
+                _properties[name.ToLower()].IsIndexed;
 
             public void SetColumnIsIndexed(string name) =>
-                _indexedColumns.Add(name);
+                _properties[name.ToLower()].IsIndexed = true;
 
-            public void ExcludeColumn(string name) =>
-                _excludedColumns.Add(name);
+            public void ExcludeColumn(string name)
+            {
+                if (_properties.TryGetValue(name.ToLower(), out var property))
+                    property.IsExcluded = true;
+                else
+                    _excludedColumns.Add(name.ToLower());
+            }
+
+            public void IsExtension(string name) =>
+                _properties[name.ToLower()].IsExtension = true;
 
             public void ApplyAttribute(string columnName, Expression attribute) =>
-                _columnAttributes.Add((columnName, attribute));
+                _properties[columnName.ToLower()].Attributes.Add(attribute);
 
             public int? GetPageSize(int? take)
             {
@@ -118,66 +133,161 @@ namespace Mt.GraphQL.Internal
                         : maxPageSize;
             }
 
-            internal Type GetResultType() => _resultType ?? (_resultType = ConstructType(_type));
-
-            private Type ConstructType(Type type, string path = "", List<Type> parentTypes = null)
+            /// <summary>
+            /// Returns a model class.
+            /// </summary>
+            /// <param name="properties">
+            ///   The selected properties. 
+            ///   Can be empty or null, in which case all properties, that are visible by default, will be used. 
+            ///   Can contain nested property names like Customer.Id
+            /// </param>
+            /// <param name="extends">The extends to add to the model.</param>
+            /// <returns>A model class</returns>
+            public Type GetResultType(string[] properties, Extend[] extends)
             {
-                parentTypes = parentTypes ?? new List<Type> ();
-                parentTypes.Add(type);
+                // Create default set of properties
+                if (properties == null || properties.Length == 0)
+                    properties = _properties.Values
+                        .Where(p => !p.IsExcluded && !p.IsExtension)
+                        .Select(p => p.Name)
+                        .ToArray();
+                // Lowercase all names
+                properties.Select(p => p.ToLower()).ToArray();
 
-                var properties = type.GetPropertiesInheritedFirst()
-                    .Where(p => !_excludedColumns.Any(c => c.Equals($"{path}{p.Name}", StringComparison.OrdinalIgnoreCase)))
-                    .Select(p => ( name: p.Name, type: p.PropertyType, attributes: p.GetAttributeExpressions().ToList() ))
-                    .ToArray();
+                // Keep track of the parent types to avoid loops
+                var parentTypes = new List<Type> { _type };
 
-                for (var i = properties.Length - 1; i >= 0; i--)
+                return getResultType(_type, string.Empty, properties, extends);
+
+                Type getResultType(Type _fromType, string path, string[] propertyNames, Extend[] typeExtends)
                 {
-                    var property = properties[i];
-                    property.attributes.AddRange(
-                        GetTypeConfiguration(type)._columnAttributes
-                            .Where(x => x.columnName.Equals(property.name, StringComparison.OrdinalIgnoreCase))
-                            .Select(x => x.attribute));
+                    if (typeExtends == null)
+                        typeExtends = new Extend[0];
 
-                    if (property.type == typeof(string))
+                    var typeConfig = _fromType == _type ? this : GetTypeConfiguration(_fromType);
+                    var extendsCanContainRegularProperties = parentTypes.Count > 1;
+                    var propertyInfos = collectPropertyConfigs(extendsCanContainRegularProperties)
+                        .Select(pc => (name: pc.Name, type: pc.Property.PropertyType, attributes: pc.Attributes.ToArray()))
+                        .ToArray();
+
+                    for (var i = propertyInfos.Length - 1; i >= 0; i--)
                     {
-                        // do nothing
-                    }
-                    else if (property.type.IsGenericType && typeof(IEnumerable).IsAssignableFrom(property.type))
-                    {
-                        var itemType = property.type.GetGenericArguments()[0];
-                        if (itemType.IsClass)
+                        var propertyInfo = propertyInfos[i];
+
+                        if (propertyInfo.type == typeof(string))
                         {
-                            if (parentTypes.Contains(itemType))
+                            // no need to create nested type
+                        }
+                        else if (propertyInfo.type.IsGenericType && typeof(IEnumerable).IsAssignableFrom(propertyInfo.type))
+                        {
+                            var itemType = propertyInfo.type.GetGenericArguments()[0];
+                            if (itemType.IsClass)
                             {
-                                properties = properties.Where(p => p != property).ToArray();
+                                if (parentTypes.Contains(itemType))
+                                {
+                                    propertyInfos = propertyInfos.Where(p => p != propertyInfo).ToArray();
+                                    continue;
+                                }
+
+                                var nested = getNestedType(itemType, propertyInfo.name);
+                                propertyInfo.type = typeof(List<>).MakeGenericType(nested);
+                            }
+                        }
+                        else if (propertyInfo.type.IsClass)
+                        {
+                            if (parentTypes.Contains(propertyInfo.type))
+                            {
+                                propertyInfos = propertyInfos.Where(p => p != propertyInfo).ToArray();
                                 continue;
                             }
 
-                            itemType = ConstructType(itemType, $"{property.name}.", parentTypes);
-                            property.type = typeof(List<>).MakeGenericType(itemType);
+                            propertyInfo.type = getNestedType(propertyInfo.type, propertyInfo.name);
                         }
+
+                        propertyInfos[i] = propertyInfo;
                     }
-                    else if (property.type.IsClass)
+
+                    return TypeBuilder.GetType(_fromType.Name, propertyInfos, typeExtends);
+
+
+
+                    Type getNestedType(Type __fromType, string propertyName)
                     {
-                        if (parentTypes.Contains(property.type))
-                        {
-                            properties = properties.Where(p => p != property).ToArray();
-                            continue;
-                        }
-
-                        property.type = ConstructType(property.type, $"{property.name}.", parentTypes);
+                        parentTypes.Add(__fromType);
+                        var _extend = typeExtends?.FirstOrDefault(e => e.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+                        var _itemType = getResultType(
+                            __fromType,
+                            $"{path}{propertyName}.", _extend?.Properties?.Select(p => p.Name)?.ToArray(),
+                            _extend?.Properties);
+                        parentTypes.Remove(__fromType);
+                        return _itemType;
                     }
 
-                    properties[i] = property;
+                    List<PropertyConfig> collectPropertyConfigs(bool cleanupExtends)
+                    {
+                        var _propertyConfigs = new List<PropertyConfig>();
+                        if (propertyNames == null || propertyNames.Length == 0)
+                            _propertyConfigs = typeConfig._properties.Values
+                                .Where(p =>
+                                    !p.IsExcluded &&
+                                    (!p.IsExtension || typeExtends.Any(e => e.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase))))
+                                .ToList();
+                        else
+                            foreach (var propertyName in propertyNames)
+                            {
+                                if (!typeConfig._properties.TryGetValue(propertyName.ToLower(), out var propertyConfig) ||
+                                    propertyConfig.IsExcluded)
+                                    throw new InternalException($"Property {propertyName} is not available on {_fromType.Name}.");
+
+                                _propertyConfigs.Add(propertyConfig);
+                            }
+
+                        foreach (var typeExtend in typeExtends.ToArray())
+                        {
+                            if (!typeConfig._properties.TryGetValue(typeExtend.Name.ToLower(), out var propertyConfig) || propertyConfig.IsExcluded)
+                                throw new InternalException($"Property {typeExtend.Name} is not available on type {_fromType.Name}.");
+
+                            if (!propertyConfig.IsExtension)
+                            {
+                                if (cleanupExtends)
+                                {
+                                    typeExtends = typeExtends.Where(e => e != typeExtend).ToArray();
+                                    continue;
+                                }
+                                
+                                throw new InternalException($"Extension {typeExtend.Name} is not available on {_fromType.Name}.");
+                            }
+
+                            if (_propertyConfigs.Any(pc => pc.Name.Equals(typeExtend.Name, StringComparison.OrdinalIgnoreCase)))
+                                continue;
+
+                            _propertyConfigs.Add(propertyConfig);
+                        }
+
+                        return _propertyConfigs;
+                    }
                 }
+            }
+        }
 
-                parentTypes.Remove(type);
+        public class PropertyConfig
+        {
+            public string Name { get; }
 
-                return TypeBuilder.GetType(
-                    type.Name, 
-                    properties
-                        .Select(p => (p.name, p.type, attributes: p.attributes.ToArray()))
-                        .ToArray());
+            public PropertyInfo Property { get; }
+
+            public bool IsExcluded { get; set; }
+
+            public bool IsIndexed { get; set; }
+
+            public bool IsExtension { get; set; }
+
+            public List<Expression> Attributes { get; } = new List<Expression>();
+
+            public PropertyConfig(PropertyInfo property)
+            {
+                Name = property.Name;
+                Property = property;
             }
         }
     }

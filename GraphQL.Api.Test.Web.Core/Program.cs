@@ -22,7 +22,8 @@ namespace Mt.GraphQL.Api.Test.Web.Core
                     x => x.DateOfBirth,
                     () => new JsonDateTimeConverterAttribute { Format = "yyyy-MM-dd" })
                 .ExcludeProperty(x => x.Customer_Id)
-                .ExcludeProperty(x => x.Customer.Contacts);
+                .ExcludeProperty(x => x.Customer.Contacts)
+                .IsExtension(x => x.Customer);
         }
 
         internal static void Main(string[] args)

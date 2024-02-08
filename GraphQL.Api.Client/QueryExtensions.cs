@@ -26,8 +26,41 @@ namespace Mt.GraphQL.Api
 
             // Create result
             var result = query.AsQueryInternal().Clone<Query<T, TResult>>();
-            result.AsQueryInternal().Expressions.SelectExpression = selection;
+            result.AsQueryInternal().Expressions.SelectClause = new ExpressionSelectClause<T, TResult>(selection);
             result.AsQueryInternal().ResultMapping = validator.ResultMapping;
+            return result;
+        }
+
+        /// <summary>
+        /// Adds an extension to the query, including a nested entity in the model that would not be included by default.
+        /// </summary>
+        /// <typeparam name="T">The type that contains the extension.</typeparam>
+        /// <typeparam name="TProperty">The property type of the extension.</typeparam>
+        /// <param name="query">The query to extend.</param>
+        /// <param name="extend">The member expression pointing to the extension.</param>
+        public static Query<T> Extend<T, TProperty>(this Query<T> query, Expression<Func<T, TProperty>> extend)
+            where T : class
+        {
+            var result = query.AsQueryInternal().Clone<Query<T>>();
+            var expr = result.AsQueryInternal().Expressions;
+            expr.Extends = expr.Extends.Add(extend);
+            return result;
+        }
+
+        /// <summary>
+        /// Adds an extension to the query, including a nested entity in the model that would not be included by default.
+        /// </summary>
+        /// <typeparam name="T">The type that contains the extension.</typeparam>
+        /// <typeparam name="TResult">The type of selection.</typeparam>
+        /// <typeparam name="TProperty">The property type of the extension.</typeparam>
+        /// <param name="query">The query to extend.</param>
+        /// <param name="extend">The member expression pointing to the extension.</param>
+        public static Query<T, TResult> Extend<T, TResult, TProperty>(this Query<T, TResult> query, Expression<Func<T, TProperty>> extend)
+            where T : class
+        {
+            var result = query.AsQueryInternal().Clone<Query<T, TResult>>();
+            var expr = result.AsQueryInternal().Expressions;
+            expr.Extends = expr.Extends.Add(extend);
             return result;
         }
 
@@ -202,9 +235,8 @@ namespace Mt.GraphQL.Api
             var resultMapping = query.AsQueryInternal().ResultMapping;
             if (resultMapping == null)
             {
-                var visitor = new SelectSerializer<T, TResult>(
-                    query.AsQueryInternal().Expressions?.SelectExpression 
-                    ?? throw new Exception("No Select expression present"));
+                var selectClause = (query.AsQueryInternal().Expressions?.SelectClause as ExpressionSelectClause)?.Expression;
+                var visitor = new SelectSerializer<T, TResult>(selectClause ?? throw new Exception("No Select expression present"));
                 resultMapping = visitor.ResultMapping;
             }
 

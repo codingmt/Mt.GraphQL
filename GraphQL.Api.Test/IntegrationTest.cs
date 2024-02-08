@@ -70,7 +70,7 @@ namespace Mt.GraphQL.Api.Test
         }
 
         [Test]
-        public async Task TestSingleProperty()
+        public async Task TestGetSingleProperty()
         {
             var result = await _client.Contacts
                 .Select(x => x.Id)
@@ -79,12 +79,31 @@ namespace Mt.GraphQL.Api.Test
                 .Skip(1)
                 .ToArrayAsync();
 
-            Assert.That(_client.Json, Is.EqualTo(@"[2,1]"));
+            Assert.That(_client.Json, Is.EqualTo(@"[{""id"":2},{""id"":1}]"));
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Has.Length.EqualTo(2));
             Assert.That(result[0], Is.EqualTo(2));
             Assert.That(result[1], Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task TestExtend()
+        {
+            var result = await _client.Contacts
+                .Take(2)
+                .ToArrayAsync();
+
+            Assert.That(_client.RequestUrl, Is.EqualTo("/Contact?take=2"));
+            Assert.That(result[0].Customer, Is.Null);
+
+            result = await _client.Contacts
+                .Extend(x => x.Customer)
+                .Take(2)
+                .ToArrayAsync();
+
+            Assert.That(_client.RequestUrl, Is.EqualTo("/Contact?extend=Customer(Id,Name)&take=2"));
+            Assert.That(result[0].Customer, Is.Not.Null);
         }
 
         [Test]

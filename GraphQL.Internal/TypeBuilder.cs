@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +9,12 @@ using System.Xml.Serialization;
 
 namespace Mt.GraphQL.Internal
 {
-    internal class TypeBuilder
+    internal static class TypeBuilder
     {
         public static string Namespace { get; }
         private static readonly ModuleBuilder _moduleBuilder;
-        private static readonly ConcurrentDictionary<string, Type> _builtTypes;
+        private static readonly ConcurrentDictionary<string, Type> _builtTypes = new ConcurrentDictionary<string, Type>();
+        private static readonly ConcurrentDictionary<string, int> _typeCounters = new ConcurrentDictionary<string, int>();
 
         static TypeBuilder()
         {
@@ -22,18 +22,25 @@ namespace Mt.GraphQL.Internal
             var assemblyName = new AssemblyName(Namespace);
             var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
             _moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName.Name);
-            _builtTypes = new ConcurrentDictionary<string, Type>();
         }
 
-        public static Type GetType(string typeName, (string name, Type type, Expression[] attributes)[] properties)
+        public static Type GetType(string typeName, (string name, Type type, Expression[] attributes)[] properties, Extend[] extends)
         {
-            var name = properties.Aggregate($"{typeName} ", (v, pi) => v + $"{pi.type.FullName} {pi.name};");
+            var _extends = string.Join(",", extends.Select(e => e.ToString()));
+            var name = properties.Aggregate($"{typeName} {_extends} ", (v, pi) => v + $"{pi.type.FullName} {pi.name};");
             return _builtTypes.GetOrAdd(name, _ => BuildType(typeName, properties));
         }
 
         private static Type BuildType(string typeName, (string name, Type type, Expression[] attributes)[] properties)
         {
-            var typename = $"T{Guid.NewGuid():N}";
+            string typename;
+            lock(_typeCounters)
+            {
+                if (!_typeCounters.TryGetValue(typeName, out var counter))
+                    counter = 0;
+                _typeCounters[typeName] = ++counter;
+                typename = $"{typeName}_{counter}";
+            }
             var builder = _moduleBuilder.DefineType(typename);
 
             // Set XmlType attribute to serialize to correct type name when serializing to XML

@@ -50,8 +50,6 @@ namespace Mt.GraphQL.Api.Server
         /// </summary>
         /// <typeparam name="TProperty">The type of property.</typeparam>
         /// <param name="property">The property selector.</param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
         public TypeConfiguration<T> AllowFilteringAndSorting<TProperty>(Expression<Func<T, TProperty>> property)
         {
             if (property == null)
@@ -70,8 +68,6 @@ namespace Mt.GraphQL.Api.Server
         /// </summary>
         /// <typeparam name="TProperty">The type of property.</typeparam>
         /// <param name="property">The property selector.</param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
         public TypeConfiguration<T> ExcludeProperty<TProperty>(Expression<Func<T, TProperty>> property)
         {
             if (property == null)
@@ -104,14 +100,50 @@ namespace Mt.GraphQL.Api.Server
         }
 
         /// <summary>
+        /// Configures a navigation property or a nested navigation property as an extension. This means that it is not returned by default, it has to be requested explicitly.
+        /// </summary>
+        /// <typeparam name="TProperty">The type of navigation property.</typeparam>
+        /// <param name="property">The navigation property.</param>
+        public TypeConfiguration<T> IsExtension<TProperty>(Expression<Func<T, TProperty>> property)
+        {
+            if (property == null)
+                throw new ArgumentNullException(nameof(property));
+
+            var body = property.Body;
+            var member = string.Empty;
+            do
+            {
+                switch (body)
+                {
+                    case MemberExpression m:
+                        if (m.Member is PropertyInfo pi && !pi.PropertyType.IsClass && pi.PropertyType != typeof(string))
+                            throw new ArgumentException($"Argument property must be a navigation property.");
+                        member = $".{m.Member.Name}{member}";
+                        body = m.Expression;
+                        break;
+                    case MethodCallExpression call:
+                        body = call.Method.IsStatic ? call.Arguments[0] : call.Object;
+                        break;
+                    default:
+                        throw new ArgumentException($"Argument property must select a property or nested property on type {typeof(T).Name}.");
+                }
+            } while (!(body is ParameterExpression));
+
+            if (body != property.Parameters[0])
+                throw new ArgumentException($"Argument property must select a property on type {typeof(T).Name}.");
+
+            _internalTypeConfig.IsExtension(member.Substring(1));
+
+            return this;
+        }
+
+        /// <summary>
         /// Configures a property as fit for filtering and ordering.
         /// </summary>
         /// <typeparam name="TProperty">The type of property.</typeparam>
         /// <typeparam name="TAttribute">The type of attribute.</typeparam>
         /// <param name="property">The property selector.</param>
-        /// <param name="attribute"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
+        /// <param name="attribute">The attribute expression.</param>
         public TypeConfiguration<T> ApplyAttribute<TProperty, TAttribute>(
             Expression<Func<T, TProperty>> property, 
             Expression<Func<TAttribute>> attribute)

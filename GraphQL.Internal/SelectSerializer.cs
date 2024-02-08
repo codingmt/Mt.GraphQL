@@ -103,9 +103,9 @@ namespace Mt.GraphQL.Internal
         {
             #pragma warning disable CS8603 // Possible null reference return.
             if (typeof(TTo).IsClass)
-                return jToken => jToken.ToObject<TTo>();
+                return jToken => jToken.Children().First().Children().First().ToObject<TTo>();
 
-            return jToken => jToken.Value<TTo>();
+            return jToken => jToken.Children().First().Children().First().Value<TTo>();
             #pragma warning restore CS8603 // Possible null reference return.
         }
 

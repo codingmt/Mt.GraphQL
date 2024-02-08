@@ -1,29 +1,10 @@
-# Introduction
-Mt.GraphQL contains libraries for exposing and querying APIs using GraphQL. Client side, a request can be built using Linq-like expressions. Server-side, the query can be applied directly to `IQueryables<>` from EntityFramework.
+﻿# Introduction
+The [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) package makes it easy to expose data in your API using GraphQL queries. For .NET clients, package [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) can be used.
 
-# Client
-For the client side, package [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) is used. A client class can be created to expose queries on entities. Using those queries, you can partially select the entity, filter it, sort it and apply paging. Results can be received in arrays, lists or as an int by calling `CountAsync()`.
-```c#
-class GraphQlClient : ClientBase
-{
-    public ClientQuery<Contact> Contacts => CreateQuery<Contact>();
-}
+# Controllers
+In your web project's controllers, the GraphQL queries are mapped to a generic `Query` object. The server library allows you to directly apply this query object to any `IQueryable` of the entity's type. This means that you could optionally first filter the data in the `IQueryable` to make sure the client only retrieves what is allowed. You could of course also pass the query object to the business layer if your application pattern requires that.
 
-var client = new GraphQlClient();
-
-var result = await client.Contacts
-    .Select(x => new { x.Id, x.Name, x.DateOfBirth })
-    .Where(x => x.Name.StartsWith("Contact 1"))
-    .OrderByDescending(x => x.Name)
-    .Skip(1)
-    .ToArrayAsync();
-// Uses query string: ?select=Id,Name,DateOfBirth&filter=startsWith(Name,'Contact 1')&orderBy=Id desc&skip=1
-```
-
-# Server
-For the server side, package [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) is used. To receive the GraphQL query, a generic Query class is used as an argument for the GET methods. This query can be applied directly to a `IQueryable<>` coming from EntityFramework's data context, or a hard-coded filter can be applied to the `IQueryable<>` first.
-
-## ASP.Net Core
+## ASP.NET Core
 ```c#
 [ApiController, Route("Contact")]
 public class ContactController : ControllerBase
@@ -46,6 +27,13 @@ public class ContactController : ControllerBase
         }
     }
 }
+```
+
+When using `ApiController` attributes on our controllers, you can remove the part that checks the model state. Instead, add the following to the application startup:
+```c#
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(
+    opt => opt.InvalidModelStateResponseFactory =
+        ctx => ctx.ModelState.ToBadRequest(ctx));
 ```
 
 ## .NET Framework MVC 5
@@ -71,6 +59,22 @@ public ActionResult GetContacts(Query<Contact> query)
 }
 ```
 
+The used `ToBadRequest()` method is the following extension method:
+```c#
+public static ActionResult ToBadRequest(this ModelStateDictionary modelState, ControllerContext context)
+{
+    context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+    var keys = modelState.Keys.ToArray();
+    return new ContentResult
+    {
+        Content = modelState.Values
+            .SelectMany((v, i) => v.Errors.Select(e => $"Error in {keys[i]}: {e.Exception?.Message ?? e.ErrorMessage}"))
+            .Aggregate(string.Empty, (r, v) => r + "; " + v)
+            .Substring(2)
+    };                
+}
+```
+
 ## .NET Framework API
 ```c#
 [HttpGet, Route("Contact")]
@@ -93,7 +97,7 @@ public IHttpActionResult GetContacts([FromUri]Query<Contact> query)
 }
 ```
 
-## Server configuration
+# Server configuration
 To customize the way entities can be queried, they can be configured in the startup of the API using `GraphqlConfiguration.Configure<>()`. You can configure 
 - the maximum page size, globally or per entity
 - which columns can be used for fitering and sorting (to avoid poorly performing queries which filter on database columns that aren't indexed)

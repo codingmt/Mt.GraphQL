@@ -1,15 +1,14 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Mt.GraphQL.Internal
 {
     public class QueryExpressions
     {
-        public LambdaExpression SelectExpression { get; set; }
+        public SelectClause SelectClause { get; set; }
+        public Extend[] Extends { get; set; }
         public LambdaExpression FilterExpression { get; set; }
         public List<(LambdaExpression member, bool descending)> OrderBy { get; } = new List<(LambdaExpression member, bool descending)>();
         public bool RestrictToModel { get; set; }
@@ -17,125 +16,28 @@ namespace Mt.GraphQL.Internal
 
     public class QueryExpressions<T> : QueryExpressions
     {
-        private static readonly MethodInfo _selectMethod = GetMethodInfo(q => q.Select(x => x));
-        private static readonly MethodInfo _toListMethod = GetMethodInfo(q => q.ToList());
+        public string GetSelect() => 
+            SelectClause?.ToString() ?? string.Empty;
 
-        private static MethodInfo GetMethodInfo(Expression<Func<IQueryable<object>, IQueryable<object>>> method) =>
-            (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
-        private static MethodInfo GetMethodInfo(Expression<Action<IQueryable<object>>> method) =>
-            (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
+        public void ParseSelect(string expression) => 
+            SelectClause = new StringSelectClause { Expression = expression };
 
-        public QueryExpressions()
-        {
-            ParseSelect(string.Empty);
-        }
+        public string GetExtend() => 
+            Extends == null || Extends.Length == 0 
+                ? string.Empty 
+                : string.Join(",", Extends.Select(x => x.ToString()));
 
-        public string GetSelect()
-        {
-            if (SelectExpression == null)
-                return string.Empty;
-
-            return new SelectSerializer<T>(SelectExpression).ToString();
-        }
-
-        public void ParseSelect(string expression)
-        {
-            try
-            {
-                var parameter = Expression.Parameter(typeof(T), "x");
-                var resultType = Configuration.GetTypeConfiguration<T>().GetResultType();
-                var properties = expression.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(propName =>
-                    {
-                        var (expr, t, attributes) = ParseMemberExpression(resultType, ref propName, parameter);
-                        return ( expr, type: t, name: propName, attributes );
-                    })
-                    .ToArray();
-                switch (properties.Length)
-                {
-                    case 0:
-                        SelectExpression = null;
-                        break;
-                    case 1:
-                        SelectExpression = properties[0].expr;
-                        break;
-                    default:
-                        var type = TypeBuilder.GetType(typeof(T).Name, properties.Select(p => (p.name, p.type, p.attributes)).ToArray());
-                        SelectExpression = Expression.Lambda(
-                            CreateMemberInit(type, parameter, properties.Select(p => (p.expr, p.type, p.name)).ToArray()),
-                            parameter);
-                        break;
-                }
-            }
-            catch (ConfigurationException ex)
-            {
-                throw new QueryInternalException(expression, ex.Message);
-            }
-        }
-
-        private MemberInitExpression CreateMemberInitForType(Type targetType, Expression from, ParameterExpression param) =>
-            CreateMemberInit(
-                targetType, 
-                param,
-                targetType.GetProperties()
-                    .Select(pp =>
-                    {
-                        var name = pp.Name;
-                        var expr = Expression.Lambda(
-                            Expression.Property(from, from.Type.GetProperty(pp.Name)),
-                            param);
-                        return (expr, type: pp.PropertyType, name);
-                    })
-                    .ToArray());
-
-        private MemberInitExpression CreateMemberInit(Type targetType, ParameterExpression param, (LambdaExpression expr, Type type, string name)[] properties) =>
-            Expression.MemberInit(
-                Expression.New(targetType.GetConstructors().First()),
-                properties.Select(p =>
-                {
-                    var prop = targetType.GetProperty(p.name);
-                    if (!prop.PropertyType.IsClass || prop.PropertyType == typeof(string))
-                        return Expression.Bind(prop, p.expr.Body);
-
-                    if (typeof(IList).IsAssignableFrom(prop.PropertyType) && prop.PropertyType.IsGenericType)
-                    {
-                        var modelType = prop.PropertyType.GenericTypeArguments[0];
-                        var entityType = p.expr.ReturnType.GenericTypeArguments[0];
-                        var selectParameter = Expression.Parameter(entityType);
-                        return Expression.Bind(prop,
-                            Expression.Call(
-                                null,
-                                _toListMethod.MakeGenericMethod(modelType),
-                                Expression.Call(
-                                    null,
-                                    _selectMethod.MakeGenericMethod(entityType, modelType),
-                                    Expression.Convert(
-                                        p.expr.Body,
-                                        typeof(IQueryable<>).MakeGenericType(p.expr.ReturnType.GenericTypeArguments[0])),
-                                    Expression.Lambda(
-                                        CreateMemberInitForType(modelType, selectParameter, selectParameter),
-                                        selectParameter))
-                                ));
-                    }
-
-                    return Expression.Bind(
-                        prop,
-                        CreateMemberInitForType(
-                            prop.PropertyType,
-                            p.expr.Body,
-                            param));
-                }));
+        public void ParseExtend(string value) => 
+            Extends = Extend.Parse(value);
 
         public LambdaExpression GetActualSelectExpression()
         {
-            if (SelectExpression != null) 
-                return SelectExpression;
+            if (SelectClause is ExpressionSelectClause e) 
+                return e.Expression;
 
-            var parameter = Expression.Parameter(typeof(T), "x");
-            var resultType = Configuration.GetTypeConfiguration<T>().GetResultType();
-            return Expression.Lambda(
-                CreateMemberInitForType(resultType, parameter, parameter),
-                parameter);
+            var configuration = Configuration.GetTypeConfiguration<T>();
+            var modelType = configuration.GetResultType(SelectClause?.GetProperties(), Extends);
+            return SelectExpressionBuilder.CreateSelectExpression(typeof(T), modelType);
         }
 
         public string GetFilter()

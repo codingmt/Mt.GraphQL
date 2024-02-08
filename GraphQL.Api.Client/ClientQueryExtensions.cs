@@ -29,6 +29,29 @@ namespace Mt.GraphQL.Api
             (ClientQuery<T, TResult>)QueryExtensions.Select(query, selection);
 
         /// <summary>
+        /// Adds an extension to the query, including a nested entity in the model that would not be included by default.
+        /// </summary>
+        /// <typeparam name="T">The type that contains the extension.</typeparam>
+        /// <typeparam name="TProperty">The property type of the extension.</typeparam>
+        /// <param name="query">The query to extend.</param>
+        /// <param name="extend">The member expression pointing to the extension.</param>
+        public static ClientQuery<T> Extend<T, TProperty>(this ClientQuery<T> query, Expression<Func<T, TProperty>> extend)
+            where T : class =>
+            (ClientQuery<T>)QueryExtensions.Extend(query, extend);
+
+        /// <summary>
+        /// Adds an extension to the query, including a nested entity in the model that would not be included by default.
+        /// </summary>
+        /// <typeparam name="T">The type that contains the extension.</typeparam>
+        /// <typeparam name="TResult">The type of selection.</typeparam>
+        /// <typeparam name="TProperty">The property type of the extension.</typeparam>
+        /// <param name="query">The query to extend.</param>
+        /// <param name="extend">The member expression pointing to the extension.</param>
+        public static ClientQuery<T, TResult> Extend<T, TResult, TProperty>(this ClientQuery<T, TResult> query, Expression<Func<T, TProperty>> extend)
+            where T : class =>
+            (ClientQuery<T, TResult>)QueryExtensions.Extend(query, extend);
+
+        /// <summary>
         /// Sets the filter on type <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">The type of source entity.</typeparam>

@@ -2,10 +2,19 @@
 
 namespace Mt.GraphQL.Internal
 {
+    public class InternalException : Exception
+    {
+        public InternalException(string message) : base(message)
+        { }
+
+        public InternalException(string message, Exception innerException) : base(message, innerException)
+        { }
+    }
+
     /// <summary>
     /// Exception thrown while parsing a query expression.
     /// </summary>
-    public class QueryInternalException : Exception
+    public class QueryInternalException : InternalException
     {
         /// <summary>
         /// The query that yielded the <see cref="QueryInternalException"/>.

@@ -37,6 +37,26 @@ namespace Mt.GraphQL.Api
         }
 
         /// <summary>
+        /// The fields to exend the model with, optionally specifiying their fields.
+        /// </summary>
+        /// <example>visitaddress(zipcode,housenumber,housenumberaddition)</example>
+        public string Extend
+        {
+            get => _expressions.GetExtend();
+            set
+            {
+                try
+                {
+                    _expressions.ParseExtend(value ?? string.Empty);
+                }
+                catch (QueryInternalException ex)
+                {
+                    throw new QueryException(ex);
+                }
+            }
+        }
+
+        /// <summary>
         /// The filter to apply to the set of type <typeparamref name="T"/>.
         /// </summary>
         public string Filter
@@ -141,7 +161,8 @@ namespace Mt.GraphQL.Api
         /// <param name="destination">The object to copy the properties to.</param>
         protected virtual void CopyPropertiesTo(IQueryInternal<T> destination)
         {
-            destination.Expressions.SelectExpression = _expressions.SelectExpression;
+            destination.Expressions.SelectClause = _expressions.SelectClause?.Clone();
+            destination.Expressions.Extends = _expressions.Extends.CloneExtends();
             destination.Expressions.FilterExpression = _expressions.FilterExpression;
             destination.Expressions.OrderBy.Clear();
             destination.Expressions.OrderBy.AddRange(_expressions.OrderBy);
@@ -174,6 +195,14 @@ namespace Mt.GraphQL.Api
                 if (sb.Length > 0)
                     sb.Append('&');
                 sb.Append($"select={select}");
+            }
+
+            var extend = Extend;
+            if (!string.IsNullOrWhiteSpace(extend))
+            {
+                if (sb.Length > 0)
+                    sb.Append('&');
+                sb.Append($"extend={extend}");
             }
 
             var filter = Filter;

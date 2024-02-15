@@ -106,7 +106,7 @@ namespace System.Linq
                 set = (IQueryable)takeMethod.Invoke(null, new object[] { set, take });
             }
 
-            var selectExpression = query.Expressions.GetActualSelectExpression();
+            var selectExpression = query.Expressions.GetActualSelectExpression(false);
             var selectMethod = _selectMethod.MakeGenericMethod(typeof(T), selectExpression.ReturnType);
             set = (IQueryable)selectMethod.Invoke(null, new object[] { set, selectExpression });
 

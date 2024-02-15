@@ -107,15 +107,15 @@ namespace Mt.GraphQL.Api.Test
         {
             var clientQuery = _client.Set
                 .Select(x => x.Parent)
-                .Where(x => x.Description.Contains("Entiteit") && x.Parent != null);
-            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Parent&filter=contains(Description,'Entiteit') and Parent ne null"));
+                .Where(x => x.Description.Contains("Entiteit"));
+            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Parent&filter=contains(Description,'Entiteit')"));
 
             var result = await clientQuery.ToArrayAsync();
 
             Assert.That(_client.Json, Is.EqualTo(@"{
   ""query"": {
     ""select"": ""Parent"",
-    ""filter"": ""contains(Description,\u0027Entiteit\u0027) and Parent ne null""
+    ""filter"": ""contains(Description,\u0027Entiteit\u0027)""
   },
   ""data"": [
     {
@@ -123,15 +123,17 @@ namespace Mt.GraphQL.Api.Test
         ""id"": 0,
         ""name"": ""Parent of C""
       }
-    }
+    },
+    {}
   ]
 }"));
 
             Assert.Multiple(() =>
             {
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result, Has.Length.EqualTo(1));
+                Assert.That(result, Has.Length.EqualTo(2));
                 Assert.That(result[0].Name, Is.EqualTo("Parent of C"));
+                Assert.That(result[1], Is.Null);
             });
         }
 

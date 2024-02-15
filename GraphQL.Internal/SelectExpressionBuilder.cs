@@ -17,21 +17,22 @@ namespace Mt.GraphQL.Internal
         private static MethodInfo GetMethodInfo(Expression<Action<IQueryable<object>>> method) =>
             (method.Body as MethodCallExpression).Method.GetGenericMethodDefinition();
 
-        private static readonly ConcurrentDictionary<Type, LambdaExpression> _createdExpressions = 
-            new ConcurrentDictionary<Type, LambdaExpression>();
+        private static readonly ConcurrentDictionary<string, LambdaExpression> _createdExpressions = 
+            new ConcurrentDictionary<string, LambdaExpression>();
 
-        public static LambdaExpression CreateSelectExpression(Type entityType, Type modelType) =>
+        public static LambdaExpression CreateSelectExpression(Type entityType, Type modelType, bool nullChecking) =>
             _createdExpressions.GetOrAdd(
-                modelType,
+                $"{modelType.FullName} {nullChecking}",
                 _ =>
                 {
                     var parameter = Expression.Parameter(entityType, "x");
-                    return Expression.Lambda(
-                        CreateMemberInitForType(modelType, parameter, parameter),
-                        parameter);
+                    Expression body = CreateMemberInitForType(modelType, parameter, parameter, nullChecking);
+                    if (nullChecking)
+                        body = CheckForNull(parameter, body);
+                    return Expression.Lambda(body, parameter);
                 });
 
-        private static MemberInitExpression CreateMemberInitForType(Type targetType, Expression from, ParameterExpression param) =>
+        private static MemberInitExpression CreateMemberInitForType(Type targetType, Expression from, ParameterExpression param, bool nullChecking) =>
             CreateMemberInit(
                 targetType,
                 param,
@@ -45,9 +46,10 @@ namespace Mt.GraphQL.Internal
                         var lambda = Expression.Lambda(expr, param);
                         return (expr: lambda, type: pp.PropertyType, name);
                     })
-                    .ToArray());
+                    .ToArray(),
+                nullChecking);
 
-        private static MemberInitExpression CreateMemberInit(Type targetType, ParameterExpression param, (LambdaExpression expr, Type type, string name)[] properties) =>
+        private static MemberInitExpression CreateMemberInit(Type targetType, ParameterExpression param, (LambdaExpression expr, Type type, string name)[] properties, bool nullChecking) =>
             Expression.MemberInit(
                 Expression.New(targetType.GetConstructors().First()),
                 properties.Select(p =>
@@ -76,17 +78,22 @@ namespace Mt.GraphQL.Internal
                                         p.expr.Body,
                                         typeof(IQueryable<>).MakeGenericType(p.expr.ReturnType.GenericTypeArguments[0])),
                                     Expression.Lambda(
-                                        CreateMemberInitForType(modelType, selectParameter, selectParameter),
+                                        CreateMemberInitForType(modelType, selectParameter, selectParameter, nullChecking),
                                         selectParameter))
                                 ));
                     }
 
-                    return Expression.Bind(
-                        prop,
-                        CreateMemberInitForType(
-                            prop.PropertyType,
-                            p.expr.Body,
-                            param));
+                    Expression value = CreateMemberInitForType(prop.PropertyType, p.expr.Body, param, nullChecking);
+                    if (nullChecking)
+                        value = CheckForNull(p.expr.Body, value);
+
+                    return Expression.Bind(prop, value);
                 }));
+
+        private static Expression CheckForNull(Expression condition, Expression conditional) =>
+            Expression.Condition(
+                Expression.Equal(condition, Expression.Constant(null, condition.Type)), 
+                Expression.Constant(null, conditional.Type), 
+                conditional);
     }
 }

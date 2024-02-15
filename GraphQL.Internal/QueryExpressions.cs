@@ -30,14 +30,14 @@ namespace Mt.GraphQL.Internal
         public void ParseExtend(string value) => 
             Extends = Extend.Parse(value);
 
-        public LambdaExpression GetActualSelectExpression()
+        public LambdaExpression GetActualSelectExpression(bool nullChecking)
         {
             if (SelectClause is ExpressionSelectClause e) 
                 return e.Expression;
 
             var configuration = Configuration.GetTypeConfiguration<T>();
             var modelType = configuration.GetResultType(SelectClause?.GetProperties(), Extends);
-            return SelectExpressionBuilder.CreateSelectExpression(typeof(T), modelType);
+            return SelectExpressionBuilder.CreateSelectExpression(typeof(T), modelType, nullChecking);
         }
 
         public string GetFilter()

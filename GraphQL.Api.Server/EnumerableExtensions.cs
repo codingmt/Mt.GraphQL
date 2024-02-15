@@ -89,7 +89,7 @@ namespace System.Collections.Generic
                 set = (IEnumerable)takeMethod.Invoke(null, new object[] { set, take });
             }
 
-            var selectExpression = query.Expressions.GetActualSelectExpression();
+            var selectExpression = query.Expressions.GetActualSelectExpression(true);
             var selectMethod = _selectMethod.MakeGenericMethod(typeof(T), selectExpression.ReturnType);
             set = (IEnumerable)selectMethod.Invoke(null, new object[] { set, selectExpression.Compile() });
 

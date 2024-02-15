@@ -99,7 +99,7 @@ To customize the way entities can be queried, they can be configured in the star
 - which columns can be used for fitering and sorting (to avoid poorly performing queries which filter on database columns that aren't indexed)
 - which serialization attributes should be applied to properties
 - which properties should be hidden
-- which navigation properties are Extends (these properties are not returned by default, only when explicitly requested using an extend clause. See the [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) README for more info).
+- which navigation properties are Extensions (these properties are not returned by default, only when explicitly requested using an `extend` clause. See the [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) README for more info).
 
 Configurations can also be applied to base classes using `GraphqlConfiguration.ConfigureBase<>()`. This way the configuration is applied to all classes that derive from the configured base class.
 ```c#

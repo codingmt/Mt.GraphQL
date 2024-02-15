@@ -2,7 +2,7 @@
 The [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) package makes it easy to expose data in your API using GraphQL queries. For .NET clients, package [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) can be used.
 
 # Controllers
-In your web project's controllers, the GraphQL queries are mapped to a generic `Query` object. The server library allows you to directly apply this query object to any `IQueryable` of the entity's type. This means that you could optionally first filter the data in the `IQueryable` to make sure the client only retrieves what is allowed. You could of course also pass the query object to the business layer if your application pattern requires that.
+In your web project's controllers, the GraphQL queries are mapped to a generic `Query` object. The server library allows you to directly apply this query object to any `IQueryable` or `IEnumerable` of the entity's type. This means that you could optionally first filter the available data to make sure the client only retrieves what is allowed. You could of course also pass the query object to the business layer if your application pattern requires that. The `Apply()` function returns the requested data along with the used query parameters.
 
 ## ASP.NET Core
 ```c#
@@ -31,9 +31,9 @@ public class ContactController : ControllerBase
 
 When using `ApiController` attributes on our controllers, you can remove the part that checks the model state. Instead, add the following to the application startup:
 ```c#
-builder.Services.AddControllers().ConfigureApiBehaviorOptions(
-    opt => opt.InvalidModelStateResponseFactory =
-        ctx => ctx.ModelState.ToBadRequest(ctx));
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(
+        opt => opt.InvalidModelStateResponseFactory = ctx => ctx.ModelState.ToBadRequest(ctx));
 ```
 
 ## .NET Framework MVC 5
@@ -99,11 +99,11 @@ public IHttpActionResult GetContacts([FromUri]Query<Contact> query)
 
 # Server configuration
 To customize the way entities can be queried, they can be configured in the startup of the API using `GraphqlConfiguration.Configure<>()`. You can configure 
-- the maximum page size, globally or per entity
+- the maximum page size, globally and per entity
 - which columns can be used for fitering and sorting (to avoid poorly performing queries which filter on database columns that aren't indexed)
 - which serialization attributes should be applied to properties
 - which properties should be hidden
-- which navigation properties are Extends (these properties are not returned by default, only when explicitly requested using an extend clause. See the [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) README for more info).
+- which navigation properties are Extensions (these properties are not returned by default, only when explicitly requested using an `extend` clause. See the [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) README for more info).
 
 Configurations can also be applied to base classes using `GraphqlConfiguration.ConfigureBase<>()`. This way the configuration is applied to all classes that derive from the configured base class.
 ```c#

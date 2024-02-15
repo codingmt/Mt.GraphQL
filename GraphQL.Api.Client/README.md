@@ -13,7 +13,7 @@ class GraphQlClient : ClientBase
 ```
 
 # Retrieving the data
-You can retrieve data in an array or a list. The number of results could be limited by the server configuration. In that case you need to use paging (see below) to retrieve more than one page of data.
+You retrieve data in an extended array class which will also contain the query parameters. The number of results could be limited by the server configuration. In that case you need to use paging (see below) to retrieve more than one page of data.
 ```c#
 var client = new GraphQlClient();
 var data = await client.Contacts
@@ -63,8 +63,8 @@ You can page your results using `Skip()` and `Take()`.
 # Counting
 You can count the entities by calling `CountAsync()`.
 
-# Extends
-Server side, navigation properties of entities can be marked as Extends. This means that those navigation properties will not be returned with the entity by default. If you do want these properties included, you can specify this by calling `Extend()`. This will also tell the server which properties the client type has, so nothing is returned unnecessarily.
+# Extensions
+Server side, navigation properties of entities can be marked as Extensions. This means that those navigation properties will not be returned with the entity by default. If you do want these properties included, you can specify this by calling `Extend()`. This will also tell the server which properties the client type has, so nothing is returned unnecessarily.
 ```c#
 var client = new GraphQlClient();
 var data = await client.Contacts

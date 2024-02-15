@@ -56,27 +56,18 @@ namespace Mt.GraphQL.Api
         }
 
         /// <summary>
-        /// Get a list of results.
-        /// </summary>
-        public async Task<List<T>> ToListAsync() =>
-            JsonConvert.DeserializeObject<List<T>>(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
-
-        /// <summary>
         /// Get an array of results.
         /// </summary>
-        public async Task<T[]> ToArrayAsync() =>
-            JsonConvert.DeserializeObject<T[]>(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
+        public async Task<QueryArrayResponse<T>> ToArrayAsync() =>
+            JsonConvert.DeserializeObject<QueryArrayResponse<T>>(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
 
         /// <summary>
         /// Gets the number of results.
         /// </summary>
-        public async Task<int> CountAsync()
+        public async Task<QueryCountResponse> CountAsync()
         {
-            var query = ToString();
-            if (query.Length > 0)
-                query += "&";
-            query += "count=true";
-            return int.Parse(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, query));
+            Count = true;
+            return JsonConvert.DeserializeObject<QueryCountResponse>(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
         }
     }
 
@@ -106,15 +97,9 @@ namespace Mt.GraphQL.Api
         }
 
         /// <summary>
-        /// Get a list of results.
-        /// </summary>
-        public async Task<List<TResult>> ToListAsync() =>
-            this.ParseJson(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString())).ToList();
-
-        /// <summary>
         /// Get an array of results.
         /// </summary>
-        public async Task<TResult[]> ToArrayAsync() =>
+        public async Task<QueryArrayResponse<TResult>> ToArrayAsync() =>
             this.ParseJson(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
     }
 }

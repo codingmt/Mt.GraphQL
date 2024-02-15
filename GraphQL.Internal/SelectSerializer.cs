@@ -69,8 +69,8 @@ namespace Mt.GraphQL.Internal
 
             if (lambda.Body is NewExpression)
                 ResultMapping = CreateResultMappingForAnonymousType();
-            else if (lambda.Body is MemberExpression)
-                ResultMapping = CreateResultMappingForMember();
+            else if (lambda.Body is MemberExpression me)
+                ResultMapping = CreateResultMappingForMember(me.Member.Name);
             else
                 throw new Exception("Failed to create result mapping.");
 
@@ -99,13 +99,14 @@ namespace Mt.GraphQL.Internal
                 (TTo)constructor.Invoke(getPropertyFunctions.Select(f => f(jToken)).ToArray());
         }
 
-        private Func<JToken, TTo> CreateResultMappingForMember()
+        private Func<JToken, TTo> CreateResultMappingForMember(string memberName)
         {
-            #pragma warning disable CS8603 // Possible null reference return.
-            if (typeof(TTo).IsClass)
-                return jToken => jToken.Children().First().Children().First().ToObject<TTo>();
+            var type = TypeBuilder.GetType("SingleMember", new[] { (name: memberName, type: typeof(TTo), attributes: new Expression[0]) }, new Extend[0]);
+            var getMethod = type.GetProperty(memberName).GetMethod;
+            Func<object, TTo> getter = o => (TTo)getMethod.Invoke(o, null);
 
-            return jToken => jToken.Children().First().Children().First().Value<TTo>();
+            #pragma warning disable CS8603 // Possible null reference return.
+            return jToken => getter(jToken.ToObject(type)); 
             #pragma warning restore CS8603 // Possible null reference return.
         }
 

@@ -32,7 +32,41 @@ namespace Mt.GraphQL.Api.Test
 
             Assert.That(
                 _client.Json, 
-                Is.EqualTo("[{\"id\":1,\"name\":\"Contact 1.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1970-05-15\",\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":2,\"name\":\"Contact 1.2\",\"function\":\"Secretary\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1980-06-16\",\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":3,\"name\":\"Contact 1.3\",\"function\":\"Sales Mgr\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1990-07-17\",\"customer\":{\"id\":1,\"name\":\"Customer 1\"}},{\"id\":4,\"name\":\"Contact 2.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1971-05-18\",\"customer\":{\"id\":2,\"name\":\"Customer 2\"}}]"));
+                Is.EqualTo(@"{
+  ""query"": {
+    ""take"": 200
+  },
+  ""data"": [
+    {
+      ""id"": 1,
+      ""name"": ""Contact 1.1"",
+      ""function"": ""CEO"",
+      ""isAuthorizedToSign"": true,
+      ""dateOfBirth"": ""1970-05-15T00:00:00""
+    },
+    {
+      ""id"": 2,
+      ""name"": ""Contact 1.2"",
+      ""function"": ""Secretary"",
+      ""isAuthorizedToSign"": false,
+      ""dateOfBirth"": ""1980-06-16T00:00:00""
+    },
+    {
+      ""id"": 3,
+      ""name"": ""Contact 1.3"",
+      ""function"": ""Sales Mgr"",
+      ""isAuthorizedToSign"": false,
+      ""dateOfBirth"": ""1990-07-17T00:00:00""
+    },
+    {
+      ""id"": 4,
+      ""name"": ""Contact 2.1"",
+      ""function"": ""CEO"",
+      ""isAuthorizedToSign"": true,
+      ""dateOfBirth"": ""1971-05-18T00:00:00""
+    }
+  ]
+}"));
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Has.Length.EqualTo(4));
@@ -45,7 +79,58 @@ namespace Mt.GraphQL.Api.Test
 
             Assert.That(
                 _client.Json, 
-                Is.EqualTo("[{\"id\":1,\"name\":\"Customer 1\",\"contacts\":[{\"id\":1,\"name\":\"Contact 1.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1970-05-15\"},{\"id\":2,\"name\":\"Contact 1.2\",\"function\":\"Secretary\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1980-06-16\"},{\"id\":3,\"name\":\"Contact 1.3\",\"function\":\"Sales Mgr\",\"isAuthorizedToSign\":false,\"dateOfBirth\":\"1990-07-17\"}]},{\"id\":2,\"name\":\"Customer 2\",\"contacts\":[{\"id\":4,\"name\":\"Contact 2.1\",\"function\":\"CEO\",\"isAuthorizedToSign\":true,\"dateOfBirth\":\"1971-05-18\"}]},{\"id\":3,\"name\":\"Customer 3\",\"contacts\":[]}]"));
+                Is.EqualTo(@"{
+  ""query"": {
+    ""take"": 200
+  },
+  ""data"": [
+    {
+      ""id"": 1,
+      ""name"": ""Customer 1"",
+      ""contacts"": [
+        {
+          ""id"": 1,
+          ""name"": ""Contact 1.1"",
+          ""function"": ""CEO"",
+          ""isAuthorizedToSign"": true,
+          ""dateOfBirth"": ""1970-05-15T00:00:00""
+        },
+        {
+          ""id"": 2,
+          ""name"": ""Contact 1.2"",
+          ""function"": ""Secretary"",
+          ""isAuthorizedToSign"": false,
+          ""dateOfBirth"": ""1980-06-16T00:00:00""
+        },
+        {
+          ""id"": 3,
+          ""name"": ""Contact 1.3"",
+          ""function"": ""Sales Mgr"",
+          ""isAuthorizedToSign"": false,
+          ""dateOfBirth"": ""1990-07-17T00:00:00""
+        }
+      ]
+    },
+    {
+      ""id"": 2,
+      ""name"": ""Customer 2"",
+      ""contacts"": [
+        {
+          ""id"": 4,
+          ""name"": ""Contact 2.1"",
+          ""function"": ""CEO"",
+          ""isAuthorizedToSign"": true,
+          ""dateOfBirth"": ""1971-05-18T00:00:00""
+        }
+      ]
+    },
+    {
+      ""id"": 3,
+      ""name"": ""Customer 3"",
+      ""contacts"": []
+    }
+  ]
+}"));
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Has.Length.EqualTo(3));
@@ -55,15 +140,35 @@ namespace Mt.GraphQL.Api.Test
         public async Task TestGetSelection()
         {
             var result = await _client.Contacts
-                .Select(x => new { x.Id, x.Name, x.DateOfBirth })
+                .Select(x => new { x.Id, x.Name, DOB = x.DateOfBirth })
                 .Where(x => x.Name.StartsWith("Contact 1"))
                 .OrderByDescending(x => x.Id)
                 .Skip(1)
                 .ToArrayAsync();
-
+            
             Assert.That(
                 _client.Json, 
-                Is.EqualTo("[{\"id\":2,\"name\":\"Contact 1.2\",\"dateOfBirth\":\"1980-06-16\"},{\"id\":1,\"name\":\"Contact 1.1\",\"dateOfBirth\":\"1970-05-15\"}]"));
+                Is.EqualTo(@"{
+  ""query"": {
+    ""select"": ""Id,Name,DateOfBirth"",
+    ""filter"": ""startsWith(Name,'Contact 1')"",
+    ""orderBy"": ""Id desc"",
+    ""skip"": 1,
+    ""take"": 200
+  },
+  ""data"": [
+    {
+      ""id"": 2,
+      ""name"": ""Contact 1.2"",
+      ""dateOfBirth"": ""1980-06-16T00:00:00""
+    },
+    {
+      ""id"": 1,
+      ""name"": ""Contact 1.1"",
+      ""dateOfBirth"": ""1970-05-15T00:00:00""
+    }
+  ]
+}"));
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Has.Length.EqualTo(2));
@@ -79,7 +184,23 @@ namespace Mt.GraphQL.Api.Test
                 .Skip(1)
                 .ToArrayAsync();
 
-            Assert.That(_client.Json, Is.EqualTo(@"[{""id"":2},{""id"":1}]"));
+            Assert.That(_client.Json, Is.EqualTo(@"{
+  ""query"": {
+    ""select"": ""Id"",
+    ""filter"": ""Customer_Id ne 2"",
+    ""orderBy"": ""Name desc"",
+    ""skip"": 1,
+    ""take"": 200
+  },
+  ""data"": [
+    {
+      ""id"": 2
+    },
+    {
+      ""id"": 1
+    }
+  ]
+}"));
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Has.Length.EqualTo(2));
@@ -157,12 +278,12 @@ namespace Mt.GraphQL.Api.Test
         public async Task TestCount()
         {
             var nrOfCustomers = await _client.Customers.CountAsync();
-            Assert.That(nrOfCustomers, Is.EqualTo(3));
+            Assert.That(+nrOfCustomers, Is.EqualTo(3));
 
             nrOfCustomers = await _client.Customers
                 .Where(x => x.Id == 1)
                 .CountAsync();
-            Assert.That(nrOfCustomers, Is.EqualTo(1));
+            Assert.That(+nrOfCustomers, Is.EqualTo(1));
         }
 
         private class TestWebApp : WebApplicationFactory<Web.Core.Program>

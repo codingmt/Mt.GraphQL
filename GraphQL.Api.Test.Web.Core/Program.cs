@@ -9,6 +9,7 @@ namespace Mt.GraphQL.Api.Test.Web.Core
     {
         static Program()
         {
+            GraphqlConfiguration.DefaultMaxPageSize = 200;
             GraphqlConfiguration.ConfigureBase<ModelBase>()
                 .AllowFilteringAndSorting(x => x.Id);
             GraphqlConfiguration.Configure<Customer>()
@@ -33,9 +34,15 @@ namespace Mt.GraphQL.Api.Test.Web.Core
             // Add services to the container.
 
             // Only needed when we use ApiController attribute on controllers
-            builder.Services.AddControllers().ConfigureApiBehaviorOptions(
-                opt => opt.InvalidModelStateResponseFactory =
-                    ctx => ctx.ModelState.ToBadRequest(ctx));
+            builder.Services.AddControllers()
+                .AddJsonOptions(
+                    opt =>
+                    {
+                        opt.JsonSerializerOptions.WriteIndented = true;
+                        opt.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+                    })
+                .ConfigureApiBehaviorOptions(opt => 
+                    opt.InvalidModelStateResponseFactory = ctx => ctx.ModelState.ToBadRequest(ctx));
 
             var app = builder.Build();
 

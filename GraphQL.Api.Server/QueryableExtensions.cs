@@ -3,6 +3,7 @@ using Mt.GraphQL.Internal;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace System.Linq
 {
@@ -74,10 +75,10 @@ namespace System.Linq
                 set = (IQueryable)whereMethod.Invoke(null, new object[] { set, query.Expressions.FilterExpression });
             }
 
-            if (query.Count)
+            if (query.Count == true)
             {
                 var countMethod = _countMethod.MakeGenericMethod(typeof(T));
-                return (int)countMethod.Invoke(null, new object[] { set });
+                return new QueryResponse<int>((IQuery)query, (int)countMethod.Invoke(null, new object[] { set }));
             }
 
             var i = 0;
@@ -114,7 +115,7 @@ namespace System.Linq
             while (enumerator.MoveNext())
                 result.Add(enumerator.Current);
 
-            return result;
+            return new QueryResponse<object>((IQuery)query, result);
         }
     }
 }

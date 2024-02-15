@@ -39,10 +39,11 @@ namespace Mt.GraphQL.Internal
                     .Select(pp =>
                     {
                         var name = pp.Name;
-                        var expr = Expression.Lambda(
-                            Expression.Property(from, from.Type.GetProperty(pp.Name)),
-                            param);
-                        return (expr, type: pp.PropertyType, name);
+                        Expression expr = from;
+                        foreach (var namepart in name.Split('.'))
+                            expr = Expression.Property(expr, expr.Type.GetProperty(namepart));
+                        var lambda = Expression.Lambda(expr, param);
+                        return (expr: lambda, type: pp.PropertyType, name);
                     })
                     .ToArray());
 

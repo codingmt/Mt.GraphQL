@@ -1,7 +1,9 @@
 ﻿using Mt.GraphQL.Internal;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Drawing;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace Mt.GraphQL.Api
@@ -10,7 +12,7 @@ namespace Mt.GraphQL.Api
     /// Query to apply to a set of <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type of items in the set.</typeparam>
-    public class Query<T> : IQueryInternal<T>
+    public class Query<T> : IQueryInternal<T>, IQuery
         where T : class
     {
         private readonly QueryExpressions<T> _expressions = new QueryExpressions<T>();
@@ -127,7 +129,7 @@ namespace Mt.GraphQL.Api
         /// <summary>
         /// Indicates that the items should be counted.
         /// </summary>
-        public bool Count { get; set; }
+        public bool? Count { get; set; }
 
         QueryExpressions<T> IQueryInternal<T>.Expressions => _expressions;
 
@@ -213,7 +215,7 @@ namespace Mt.GraphQL.Api
                 sb.Append($"filter={filter}");
             }
 
-            if (Count)
+            if (Count == true)
             {
                 if (sb.Length > 0)
                     sb.Append('&');
@@ -270,5 +272,41 @@ namespace Mt.GraphQL.Api
             if (destination is Query<T, TResult> q)
                 q.AsQueryInternal().ResultMapping = this.AsQueryInternal().ResultMapping;
         }
+    }
+
+    /// <summary>
+    /// Specifying properties for a query.
+    /// </summary>
+    public interface IQuery
+    {
+        /// <summary>
+        /// Indicates that the items should be counted.
+        /// </summary>
+        bool? Count { get; set; }
+        /// <summary>
+        /// The fields to exend the model with, optionally specifiying their fields.
+        /// </summary>
+        /// <example>visitaddress(zipcode,housenumber,housenumberaddition)</example>
+        string Extend { get; set; }
+        /// <summary>
+        /// The filter to apply to the set.
+        /// </summary>
+        string Filter { get; set; }
+        /// <summary>
+        /// The fields to order the resulting set by.
+        /// </summary>
+        string OrderBy { get; set; }
+        /// <summary>
+        /// The fields to select.
+        /// </summary>
+        string Select { get; set; }
+        /// <summary>
+        /// The number of items to skip.
+        /// </summary>
+        int? Skip { get; set; }
+        /// <summary>
+        /// The number of items to take.
+        /// </summary>
+        int? Take { get; set; }
     }
 }

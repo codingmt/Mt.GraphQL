@@ -229,7 +229,7 @@ namespace Mt.GraphQL.Api
         /// <param name="query">The <see cref="Query{T, TResult}"/> used to request the received json.</param>
         /// <param name="json">The received json.</param>
         /// <returns>An array of <typeparamref name="TResult"/>.</returns>
-        public static TResult[] ParseJson<T, TResult>(this Query<T, TResult> query, string json)
+        public static QueryArrayResponse<TResult> ParseJson<T, TResult>(this Query<T, TResult> query, string json)
             where T : class
         {
             var resultMapping = query.AsQueryInternal().ResultMapping;
@@ -240,7 +240,12 @@ namespace Mt.GraphQL.Api
                 resultMapping = visitor.ResultMapping;
             }
 
-            return JArray.Parse(json)?.Select(resultMapping).ToArray();
+            var o = JObject.Parse(json);
+            return new QueryArrayResponse<TResult>
+                (
+                    o.GetValue("query").ToObject<QueryData>(),
+                    JArray.FromObject(o.Value<object>("data"))?.Select(resultMapping).ToArray()
+                );
         }
     }
 }

@@ -36,18 +36,27 @@ namespace Mt.GraphQL.Api.Test
 
             var result = await clientQuery.ToArrayAsync();
 
-            Assert.That(_client.Json, Is.EqualTo(@"[
-  {
-    ""id"": 5,
-    ""name"": ""E"",
-    ""parent.Name"": ""Parent of E""
+            Assert.That(_client.Json, Is.EqualTo(@"{
+  ""query"": {
+    ""select"": ""Id,Name,Parent.Name"",
+    ""filter"": ""contains(Description,\u0027Entity\u0027)"",
+    ""orderBy"": ""Id desc,Name"",
+    ""skip"": 1,
+    ""take"": 2
   },
-  {
-    ""id"": 2,
-    ""name"": ""B"",
-    ""parent.Name"": ""Parent of B""
-  }
-]"));
+  ""data"": [
+    {
+      ""id"": 5,
+      ""name"": ""E"",
+      ""parent.Name"": ""Parent of E""
+    },
+    {
+      ""id"": 2,
+      ""name"": ""B"",
+      ""parent.Name"": ""Parent of B""
+    }
+  ]
+}"));
 
             Assert.Multiple(() =>
             {
@@ -72,9 +81,18 @@ namespace Mt.GraphQL.Api.Test
 
             var result = await clientQuery.ToArrayAsync();
 
-            Assert.That(_client.Json, Is.EqualTo(@"[
-  3
-]"));
+            Assert.That(_client.Json, Is.EqualTo(@"{
+  ""query"": {
+    ""select"": ""Id"",
+    ""filter"": ""contains(Description,\u0027Entiteit\u0027)"",
+    ""take"": 1
+  },
+  ""data"": [
+    {
+      ""id"": 3
+    }
+  ]
+}"));
 
             Assert.Multiple(() =>
             {
@@ -89,25 +107,31 @@ namespace Mt.GraphQL.Api.Test
         {
             var clientQuery = _client.Set
                 .Select(x => x.Parent)
-                .Where(x => x.Description.Contains("Entiteit"));
-            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Parent&filter=contains(Description,'Entiteit')"));
+                .Where(x => x.Description.Contains("Entiteit") && x.Parent != null);
+            Assert.That(clientQuery.ToString(), Is.EqualTo("select=Parent&filter=contains(Description,'Entiteit') and Parent ne null"));
 
             var result = await clientQuery.ToArrayAsync();
 
-            Assert.That(_client.Json, Is.EqualTo(@"[
-  {
-    ""id"": 0,
-    ""name"": ""Parent of C""
+            Assert.That(_client.Json, Is.EqualTo(@"{
+  ""query"": {
+    ""select"": ""Parent"",
+    ""filter"": ""contains(Description,\u0027Entiteit\u0027) and Parent ne null""
   },
-  null
-]"));
+  ""data"": [
+    {
+      ""parent"": {
+        ""id"": 0,
+        ""name"": ""Parent of C""
+      }
+    }
+  ]
+}"));
 
             Assert.Multiple(() =>
             {
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result, Has.Length.EqualTo(2));
+                Assert.That(result, Has.Length.EqualTo(1));
                 Assert.That(result[0].Name, Is.EqualTo("Parent of C"));
-                Assert.That(result[1], Is.Null);
             });
         }
 

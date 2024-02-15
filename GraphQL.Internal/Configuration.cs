@@ -235,11 +235,31 @@ namespace Mt.GraphQL.Internal
                         else
                             foreach (var propertyName in propertyNames)
                             {
-                                if (!typeConfig._properties.TryGetValue(propertyName.ToLower(), out var propertyConfig) ||
-                                    propertyConfig.IsExcluded)
+                                var cfg = typeConfig;
+                                PropertyConfig propertyConfig = null;
+                                foreach (var propertyNamePart in propertyName.Split('.')) 
+                                { 
+                                    if (!cfg._properties.TryGetValue(propertyNamePart.ToLower(), out propertyConfig) ||
+                                        propertyConfig.IsExcluded)
+                                        throw new InternalException($"Property {propertyName} is not available on {_fromType.Name}.");
+
+                                    if (propertyConfig.Property.PropertyType != typeof(string) && propertyConfig.Property.PropertyType.IsClass)
+                                    {
+                                        if (typeof(ICollection).IsAssignableFrom(propertyConfig.Property.PropertyType))
+                                        {
+                                            if (!propertyConfig.Property.PropertyType.IsGenericType)
+                                                throw new InternalException($"Generic type expected for property {propertyName}");
+                                            cfg = GetTypeConfiguration(propertyConfig.Property.PropertyType.GetGenericArguments()[0]);
+                                        }
+                                        else
+                                            cfg = GetTypeConfiguration(propertyConfig.Property.PropertyType);
+                                    }
+                                }
+
+                                if (propertyConfig == null)
                                     throw new InternalException($"Property {propertyName} is not available on {_fromType.Name}.");
 
-                                _propertyConfigs.Add(propertyConfig);
+                                _propertyConfigs.Add(new PropertyConfig(propertyConfig.Property, propertyName));
                             }
 
                         foreach (var typeExtend in typeExtends.ToArray())
@@ -288,6 +308,12 @@ namespace Mt.GraphQL.Internal
             {
                 Name = property.Name;
                 Property = property;
+            }
+
+            public PropertyConfig(PropertyInfo property, string name)
+            {
+                Property = property;
+                Name = name;
             }
         }
     }

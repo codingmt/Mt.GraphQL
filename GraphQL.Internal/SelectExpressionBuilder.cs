@@ -41,8 +41,12 @@ namespace Mt.GraphQL.Internal
                     {
                         var name = pp.Name;
                         Expression expr = from;
-                        foreach (var namepart in name.Split('.'))
-                            expr = Expression.Property(expr, expr.Type.GetProperty(namepart));
+                        foreach (var namepart in name.Trim().Split('.'))
+                        {
+                            var property = Configuration.GetTypeConfiguration(expr.Type).GetProperty(namepart)
+                                ?? throw new InternalException($"Property {namepart} not found on type {expr.Type.Name}.");
+                            expr = Expression.Property(expr, property);
+                        }
                         var lambda = Expression.Lambda(expr, param);
                         return (expr: lambda, type: pp.PropertyType, name);
                     })

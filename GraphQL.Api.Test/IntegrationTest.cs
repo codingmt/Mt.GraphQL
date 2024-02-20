@@ -286,6 +286,49 @@ namespace Mt.GraphQL.Api.Test
             Assert.That(+nrOfCustomers, Is.EqualTo(1));
         }
 
+        [Test]
+        public async Task TestManualUrls()
+        {
+            try
+            {
+                string query = null;
+                _client.Configuration.CreateHttpRequestMessageHandler =
+                    (Configuration configuration, string entityName, HttpMethod httpMethod, string _, string payload) =>
+                    {
+                        var request = new HttpRequestMessage(
+                            httpMethod,
+                            $"{configuration.Url}/Contact?{query}");
+                        if (!string.IsNullOrEmpty(configuration.Key))
+                            request.Headers.Add(configuration.KeyHeaderName, configuration.Key);
+                        if (payload != null)
+                            request.Content = new StringContent(payload);
+                        return Task.FromResult(request);
+                    };
+
+                // Lowercase field names
+                query = "select=id,name&take=1";
+                var result = await _client.Contacts.Select(x => new { x.Id, x.Name }).Take(1).ToArrayAsync();
+
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Has.Length.EqualTo(1));
+                Assert.That(result[0].Id, Is.EqualTo(1));
+                Assert.That(result[0].Name, Is.EqualTo("Contact 1.1"));
+
+                // Space in field names
+                query = "select=id, name &take=1";
+                result = await _client.Contacts.Select(x => new { x.Id, x.Name }).Take(1).ToArrayAsync();
+
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result, Has.Length.EqualTo(1));
+                Assert.That(result[0].Id, Is.EqualTo(1));
+                Assert.That(result[0].Name, Is.EqualTo("Contact 1.1"));
+            }
+            finally
+            {
+                _client.Configuration.CreateHttpRequestMessageHandler = null;
+            }
+        }
+
         private class TestWebApp : WebApplicationFactory<Web.Core.Program>
         { }
 

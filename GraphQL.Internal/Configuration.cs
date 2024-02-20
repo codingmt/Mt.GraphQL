@@ -3,11 +3,9 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Xml.Linq;
 
 namespace Mt.GraphQL.Internal
 {
@@ -34,7 +32,7 @@ namespace Mt.GraphQL.Internal
         public static InternalTypeConfig GetTypeConfiguration<T>(bool configured = false) =>
             GetTypeConfiguration(typeof(T), configured);
 
-        private static InternalTypeConfig GetTypeConfiguration(Type type, bool configured = false) =>
+        public static InternalTypeConfig GetTypeConfiguration(Type type, bool configured = false) =>
             _typeConfigurations.GetOrAdd(type, 
                 t =>
                 {
@@ -102,6 +100,9 @@ namespace Mt.GraphQL.Internal
                     .FirstOrDefault(p => p.GetCustomAttribute<KeyAttribute>() != null)
                     ?.Name ?? copyFrom.LastOrDefault(x => !string.IsNullOrEmpty(x.DefaultOrderBy))?.DefaultOrderBy;
             }
+
+            public PropertyInfo GetProperty(string name) => 
+                _properties.TryGetValue(name.ToLower(), out var p) ? p.Property : null;
 
             public bool IsColumnIndexed(string name) =>
                 _properties[name.ToLower()].IsIndexed;
@@ -237,7 +238,7 @@ namespace Mt.GraphQL.Internal
                             {
                                 var cfg = typeConfig;
                                 PropertyConfig propertyConfig = null;
-                                foreach (var propertyNamePart in propertyName.Split('.')) 
+                                foreach (var propertyNamePart in propertyName.Trim().Split('.')) 
                                 { 
                                     if (!cfg._properties.TryGetValue(propertyNamePart.ToLower(), out propertyConfig) ||
                                         propertyConfig.IsExcluded)

@@ -20,7 +20,7 @@ namespace Mt.GraphQL.Internal
             SelectClause?.ToString() ?? string.Empty;
 
         public void ParseSelect(string expression) => 
-            SelectClause = new StringSelectClause { Expression = expression };
+            SelectClause = new StringSelectClause { Expression = expression?.Replace(" ", string.Empty) };
 
         public string GetExtend() => 
             Extends == null || Extends.Length == 0 

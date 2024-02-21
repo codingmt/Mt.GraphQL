@@ -1,5 +1,7 @@
 ﻿# Introduction
-The [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) package makes it easy to expose data in your API using GraphQL queries. For .NET clients, package [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) can be used.
+Using GraphQL queries, the client of your API can control how entities are returned by applying filtering, sorting, paging and/or selecting just one or a few of the entity's properties, all specified in the request. The [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) package makes it easy to expose data in your API using GraphQL queries, translating the GraphQL query to Linq to be able to apply it directly to the database, all within what is configured to be allowed.
+
+For .NET clients, package [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) can be used.
 
 # Controllers
 In your web project's controllers, the GraphQL queries are mapped to a generic `Query` object. The server library allows you to directly apply this query object to any `IQueryable` or `IEnumerable` of the entity's type. This means that you could optionally first filter the available data to make sure the client only retrieves what is allowed. You could of course also pass the query object to the business layer if your application pattern requires that. The `Apply()` function returns the requested data along with the used query parameters.

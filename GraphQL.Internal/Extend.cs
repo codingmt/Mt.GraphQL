@@ -99,11 +99,13 @@ namespace Mt.GraphQL.Internal
 
             Extend[] getProperties(Type t)
             {
-                if (t == typeof(string) || !t.IsClass)
+                if (t == typeof(string) || !(t.IsClass || t.IsInterface))
                     return null;
+
                 if (t.IsGenericType && 
                     typeof(ICollection<>).MakeGenericType(t.GetGenericArguments()[0]).IsAssignableFrom(t))
                     return getProperties(t.GetGenericArguments()[0]);
+
                 skipTypes.Add(t);
                 var e = t.GetPropertiesInheritedFirst()
                     .Where(

@@ -244,7 +244,8 @@ namespace Mt.GraphQL.Internal
                                         propertyConfig.IsExcluded)
                                         throw new InternalException($"Property {propertyName} is not available on {_fromType.Name}.");
 
-                                    if (propertyConfig.Property.PropertyType != typeof(string) && propertyConfig.Property.PropertyType.IsClass)
+                                    if (propertyConfig.Property.PropertyType != typeof(string) && 
+                                        (propertyConfig.Property.PropertyType.IsClass || propertyConfig.Property.PropertyType.IsInterface))
                                     {
                                         if (typeof(ICollection).IsAssignableFrom(propertyConfig.Property.PropertyType))
                                         {

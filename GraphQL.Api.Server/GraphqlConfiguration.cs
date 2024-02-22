@@ -116,7 +116,7 @@ namespace Mt.GraphQL.Api.Server
                 switch (body)
                 {
                     case MemberExpression m:
-                        if (m.Member is PropertyInfo pi && !pi.PropertyType.IsClass && pi.PropertyType != typeof(string))
+                        if (m.Member is PropertyInfo pi && !pi.PropertyType.IsClass && !pi.PropertyType.IsInterface && pi.PropertyType != typeof(string))
                             throw new ArgumentException($"Argument property must be a navigation property.");
                         member = $".{m.Member.Name}{member}";
                         body = m.Expression;

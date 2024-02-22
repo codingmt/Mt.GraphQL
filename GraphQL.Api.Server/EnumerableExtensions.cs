@@ -64,15 +64,15 @@ namespace System.Collections.Generic
                 return new QueryResponse<int>((IQuery)query, (int)countMethod.Invoke(null, new object[] { set }));
             }
 
-            var i = 0;
+            var isFirst = true;
             foreach (var (member, descending) in query.Expressions.OrderBy) 
             {
-                var orderMethodInfo = i == 0
+                var orderMethodInfo = isFirst
                     ? (descending ? _orderByDescendingMethod : _orderByMethod)
                     : (descending ? _thenByDescendingMethod : _thenByMethod);
                 var orderMethod = orderMethodInfo.MakeGenericMethod(typeof(T), member.ReturnType);
                 set = (IEnumerable)orderMethod.Invoke(null, new object[] { set, member.Compile() });
-                i++;
+                isFirst = false;
             }
 
             if (query.Skip.HasValue)

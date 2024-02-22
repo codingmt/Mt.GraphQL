@@ -61,7 +61,7 @@ namespace Mt.GraphQL.Internal
                     var prop = targetType.GetProperty(p.name);
 
                     // Regular properties
-                    if (!prop.PropertyType.IsClass || prop.PropertyType == typeof(string))
+                    if (!(prop.PropertyType.IsClass || prop.PropertyType.IsInterface) || prop.PropertyType == typeof(string))
                         return Expression.Bind(prop, p.expr.Body);
 
                     // One-to-many navigation property

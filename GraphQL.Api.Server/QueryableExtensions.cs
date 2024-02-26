@@ -36,8 +36,21 @@ namespace System.Linq
         /// <param name="source">The source to apply the <paramref name="query"/> to.</param>
         /// <param name="query">The query to apply to the <paramref name="source"/>.</param>
         public static object Apply<T, TResult>(this IQueryable<T> source, Query<T, TResult> query)
-            where T : class =>
-            InnerApply(source, query);
+            where T : class
+        {
+            try
+            {
+                return InnerApply(source, query);
+            }
+            catch (InternalException ex)
+            {
+                throw new QueryException(query, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new QueryException(query, "Unexpected exception", ex);
+            }
+        }
 
         /// <summary>
         /// Apply the <paramref name="query"/> to the <paramref name="source"/>.
@@ -46,8 +59,21 @@ namespace System.Linq
         /// <param name="source">The source to apply the <paramref name="query"/> to.</param>
         /// <param name="query">The query to apply to the <paramref name="source"/>.</param>
         public static object Apply<T>(this IQueryable<T> source, Query<T> query)
-            where T : class =>
-            InnerApply(source, query);
+            where T : class
+        {
+            try
+            {
+                return InnerApply(source, query);
+            }
+            catch (InternalException ex)
+            {
+                throw new QueryException(query, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new QueryException(query, "Unexpected exception", ex);
+            }
+        }
 
         private static object InnerApply<T>(IQueryable<T> source, IQueryInternal<T> query)
             where T : class

@@ -82,6 +82,7 @@ namespace Mt.GraphQL.Internal
             {
                 _type = type;
                 _properties = type.GetPropertiesInheritedFirst()
+                    .Where(p => p.IsReadWriteAutoProperty())
                     .Select(p => new PropertyConfig(p))
                     .ToDictionary(p => p.Property.Name.ToLower());
                 Configured = configured;
@@ -153,10 +154,12 @@ namespace Mt.GraphQL.Internal
                         .Select(p => p.Name)
                         .ToArray();
                 // Lowercase all names
-                properties.Select(p => p.ToLower()).ToArray();
+                properties = properties.Select(p => p.ToLower()).ToArray();
 
                 // Keep track of the parent types to avoid loops
                 var parentTypes = new List<Type> { _type };
+
+                var excludes = new List<string>();
 
                 return getResultType(_type, string.Empty, properties, extends);
 
@@ -166,6 +169,7 @@ namespace Mt.GraphQL.Internal
                         typeExtends = new Extend[0];
 
                     var typeConfig = _fromType == _type ? this : GetTypeConfiguration(_fromType);
+                    excludes.AddRange(typeConfig._excludedColumns.Select(x => $"{path}{x}".ToLower()));
                     var extendsCanContainRegularProperties = parentTypes.Count > 1;
                     var propertyInfos = collectPropertyConfigs(extendsCanContainRegularProperties)
                         .Select(pc => (name: pc.Name, type: pc.Property.PropertyType, attributes: pc.Attributes.ToArray()))
@@ -231,18 +235,25 @@ namespace Mt.GraphQL.Internal
                             _propertyConfigs = typeConfig._properties.Values
                                 .Where(p =>
                                     !p.IsExcluded &&
+                                    !excludes.Contains($"{path}{p.Name}".ToLower()) &&
                                     (!p.IsExtension || typeExtends.Any(e => e.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase))))
                                 .ToList();
                         else
                             foreach (var propertyName in propertyNames)
                             {
+                                if (excludes.Contains($"{path}{propertyName}".ToLower()))
+                                    throw new InternalException($"Property {propertyName} is not available on {_fromType.Name}.");
+
                                 var cfg = typeConfig;
                                 PropertyConfig propertyConfig = null;
-                                foreach (var propertyNamePart in propertyName.Trim().Split('.')) 
+                                var propertyNameParts = propertyName.Trim().Split('.');
+                                for (var i = 0; i < propertyNameParts.Length; i++) 
                                 { 
-                                    if (!cfg._properties.TryGetValue(propertyNamePart.ToLower(), out propertyConfig) ||
+                                    if (!cfg._properties.TryGetValue(propertyNameParts[i].ToLower(), out propertyConfig) ||
                                         propertyConfig.IsExcluded)
                                         throw new InternalException($"Property {propertyName} is not available on {_fromType.Name}.");
+
+                                    propertyNameParts[i] = propertyConfig.Name;
 
                                     if (propertyConfig.Property.PropertyType != typeof(string) && 
                                         (propertyConfig.Property.PropertyType.IsClass || propertyConfig.Property.PropertyType.IsInterface))
@@ -261,12 +272,14 @@ namespace Mt.GraphQL.Internal
                                 if (propertyConfig == null)
                                     throw new InternalException($"Property {propertyName} is not available on {_fromType.Name}.");
 
-                                _propertyConfigs.Add(new PropertyConfig(propertyConfig.Property, propertyName));
+                                _propertyConfigs.Add(new PropertyConfig(propertyConfig, string.Join(".", propertyNameParts)));
                             }
 
                         foreach (var typeExtend in typeExtends.ToArray())
                         {
-                            if (!typeConfig._properties.TryGetValue(typeExtend.Name.ToLower(), out var propertyConfig) || propertyConfig.IsExcluded)
+                            if (!typeConfig._properties.TryGetValue(typeExtend.Name.ToLower(), out var propertyConfig) || 
+                                propertyConfig.IsExcluded ||
+                                excludes.Contains($"{path}{propertyConfig.Name}".ToLower()))
                                 throw new InternalException($"Property {typeExtend.Name} is not available on type {_fromType.Name}.");
 
                             if (!propertyConfig.IsExtension)
@@ -312,9 +325,10 @@ namespace Mt.GraphQL.Internal
                 Property = property;
             }
 
-            public PropertyConfig(PropertyInfo property, string name)
+            public PropertyConfig(PropertyConfig property, string name)
             {
-                Property = property;
+                Property = property.Property;
+                Attributes = property.Attributes;
                 Name = name;
             }
         }

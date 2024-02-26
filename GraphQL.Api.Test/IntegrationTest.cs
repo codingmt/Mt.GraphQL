@@ -42,28 +42,28 @@ namespace Mt.GraphQL.Api.Test
       ""name"": ""Contact 1.1"",
       ""function"": ""CEO"",
       ""isAuthorizedToSign"": true,
-      ""dateOfBirth"": ""1970-05-15T00:00:00""
+      ""dateOfBirth"": ""1970-05-15""
     },
     {
       ""id"": 2,
       ""name"": ""Contact 1.2"",
       ""function"": ""Secretary"",
       ""isAuthorizedToSign"": false,
-      ""dateOfBirth"": ""1980-06-16T00:00:00""
+      ""dateOfBirth"": ""1980-06-16""
     },
     {
       ""id"": 3,
       ""name"": ""Contact 1.3"",
       ""function"": ""Sales Mgr"",
       ""isAuthorizedToSign"": false,
-      ""dateOfBirth"": ""1990-07-17T00:00:00""
+      ""dateOfBirth"": ""1990-07-17""
     },
     {
       ""id"": 4,
       ""name"": ""Contact 2.1"",
       ""function"": ""CEO"",
       ""isAuthorizedToSign"": true,
-      ""dateOfBirth"": ""1971-05-18T00:00:00""
+      ""dateOfBirth"": ""1971-05-18""
     }
   ]
 }"));
@@ -87,46 +87,49 @@ namespace Mt.GraphQL.Api.Test
     {
       ""id"": 1,
       ""name"": ""Customer 1"",
+      ""code"": ""C1"",
       ""contacts"": [
         {
           ""id"": 1,
           ""name"": ""Contact 1.1"",
           ""function"": ""CEO"",
           ""isAuthorizedToSign"": true,
-          ""dateOfBirth"": ""1970-05-15T00:00:00""
+          ""dateOfBirth"": ""1970-05-15""
         },
         {
           ""id"": 2,
           ""name"": ""Contact 1.2"",
           ""function"": ""Secretary"",
           ""isAuthorizedToSign"": false,
-          ""dateOfBirth"": ""1980-06-16T00:00:00""
+          ""dateOfBirth"": ""1980-06-16""
         },
         {
           ""id"": 3,
           ""name"": ""Contact 1.3"",
           ""function"": ""Sales Mgr"",
           ""isAuthorizedToSign"": false,
-          ""dateOfBirth"": ""1990-07-17T00:00:00""
+          ""dateOfBirth"": ""1990-07-17""
         }
       ]
     },
     {
       ""id"": 2,
       ""name"": ""Customer 2"",
+      ""code"": ""C2"",
       ""contacts"": [
         {
           ""id"": 4,
           ""name"": ""Contact 2.1"",
           ""function"": ""CEO"",
           ""isAuthorizedToSign"": true,
-          ""dateOfBirth"": ""1971-05-18T00:00:00""
+          ""dateOfBirth"": ""1971-05-18""
         }
       ]
     },
     {
       ""id"": 3,
       ""name"": ""Customer 3"",
+      ""code"": ""C3"",
       ""contacts"": []
     }
   ]
@@ -160,12 +163,12 @@ namespace Mt.GraphQL.Api.Test
     {
       ""id"": 2,
       ""name"": ""Contact 1.2"",
-      ""dateOfBirth"": ""1980-06-16T00:00:00""
+      ""dateOfBirth"": ""1980-06-16""
     },
     {
       ""id"": 1,
       ""name"": ""Contact 1.1"",
-      ""dateOfBirth"": ""1970-05-15T00:00:00""
+      ""dateOfBirth"": ""1970-05-15""
     }
   ]
 }"));
@@ -215,13 +218,67 @@ namespace Mt.GraphQL.Api.Test
                 .Take(2)
                 .ToArrayAsync();
 
+            Assert.That(_client.Json, Is.EqualTo(@"{
+  ""query"": {
+    ""orderBy"": ""Id"",
+    ""take"": 2
+  },
+  ""data"": [
+    {
+      ""id"": 1,
+      ""name"": ""Contact 1.1"",
+      ""function"": ""CEO"",
+      ""isAuthorizedToSign"": true,
+      ""dateOfBirth"": ""1970-05-15""
+    },
+    {
+      ""id"": 2,
+      ""name"": ""Contact 1.2"",
+      ""function"": ""Secretary"",
+      ""isAuthorizedToSign"": false,
+      ""dateOfBirth"": ""1980-06-16""
+    }
+  ]
+}"));
+
             Assert.That(_client.RequestUrl, Is.EqualTo("/Contact?take=2"));
             Assert.That(result[0].Customer, Is.Null);
 
+            _client.QueryStringOverride = "extend=Customer(Id,Name)&take=2"; // Use query string override to avoid client requests excluded Customer.Code column
             result = await _client.Contacts
-                .Extend(x => x.Customer)
-                .Take(2)
                 .ToArrayAsync();
+
+            Assert.That(_client.Json, Is.EqualTo(@"{
+  ""query"": {
+    ""extend"": ""Customer(Id,Name)"",
+    ""orderBy"": ""Id"",
+    ""take"": 2
+  },
+  ""data"": [
+    {
+      ""id"": 1,
+      ""name"": ""Contact 1.1"",
+      ""function"": ""CEO"",
+      ""isAuthorizedToSign"": true,
+      ""dateOfBirth"": ""1970-05-15"",
+      ""customer"": {
+        ""id"": 1,
+        ""name"": ""Customer 1""
+      }
+    },
+    {
+      ""id"": 2,
+      ""name"": ""Contact 1.2"",
+      ""function"": ""Secretary"",
+      ""isAuthorizedToSign"": false,
+      ""dateOfBirth"": ""1980-06-16"",
+      ""customer"": {
+        ""id"": 1,
+        ""name"": ""Customer 1""
+      }
+    }
+  ]
+}"));
 
             Assert.That(_client.RequestUrl, Is.EqualTo("/Contact?extend=Customer(Id,Name)&take=2"));
             Assert.That(result[0].Customer, Is.Not.Null);
@@ -289,44 +346,40 @@ namespace Mt.GraphQL.Api.Test
         [Test]
         public async Task TestManualUrls()
         {
-            try
-            {
-                string query = null;
-                _client.Configuration.CreateHttpRequestMessageHandler =
-                    (Configuration configuration, string entityName, HttpMethod httpMethod, string _, string payload) =>
-                    {
-                        var request = new HttpRequestMessage(
-                            httpMethod,
-                            $"{configuration.Url}/Contact?{query}");
-                        if (!string.IsNullOrEmpty(configuration.Key))
-                            request.Headers.Add(configuration.KeyHeaderName, configuration.Key);
-                        if (payload != null)
-                            request.Content = new StringContent(payload);
-                        return Task.FromResult(request);
-                    };
+            // Lowercase field names in the query should yield correctly cased field names in the response
+            _client.QueryStringOverride = "select=id,name,dateofbirth,customer.name&take=1";
+            var result = await _client.Contacts.Select(x => new { x.Id, x.Name, x.DateOfBirth, CustomerName = x.Customer.Name }).Take(1).ToArrayAsync();
 
-                // Lowercase field names
-                query = "select=id,name&take=1";
-                var result = await _client.Contacts.Select(x => new { x.Id, x.Name }).Take(1).ToArrayAsync();
+            Assert.That(_client.Json, Is.EqualTo(@"{
+  ""query"": {
+    ""select"": ""id,name,dateofbirth,customer.name"",
+    ""orderBy"": ""Id"",
+    ""take"": 1
+  },
+  ""data"": [
+    {
+      ""id"": 1,
+      ""name"": ""Contact 1.1"",
+      ""dateOfBirth"": ""1970-05-15"",
+      ""customer.Name"": ""Customer 1""
+    }
+  ]
+}"));
 
-                Assert.That(result, Is.Not.Null);
-                Assert.That(result, Has.Length.EqualTo(1));
-                Assert.That(result[0].Id, Is.EqualTo(1));
-                Assert.That(result[0].Name, Is.EqualTo("Contact 1.1"));
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Has.Length.EqualTo(1));
+            Assert.That(result[0].Id, Is.EqualTo(1));
+            Assert.That(result[0].Name, Is.EqualTo("Contact 1.1"));
+            Assert.That(result[0].CustomerName, Is.EqualTo("Customer 1"));
 
-                // Space in field names
-                query = "select=id, name &take=1";
-                result = await _client.Contacts.Select(x => new { x.Id, x.Name }).Take(1).ToArrayAsync();
+            // Spaces in field names
+            _client.QueryStringOverride = "select=id, name ,dateofbirth, customer.name&take=1&orderby= name &filter= id eq 1";
+            result = await _client.Contacts.Select(x => new { x.Id, x.Name, x.DateOfBirth, CustomerName = x.Customer.Name }).Take(1).ToArrayAsync();
 
-                Assert.That(result, Is.Not.Null);
-                Assert.That(result, Has.Length.EqualTo(1));
-                Assert.That(result[0].Id, Is.EqualTo(1));
-                Assert.That(result[0].Name, Is.EqualTo("Contact 1.1"));
-            }
-            finally
-            {
-                _client.Configuration.CreateHttpRequestMessageHandler = null;
-            }
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Has.Length.EqualTo(1));
+            Assert.That(result[0].Id, Is.EqualTo(1));
+            Assert.That(result[0].Name, Is.EqualTo("Contact 1.1"));
         }
 
         private class TestWebApp : WebApplicationFactory<Web.Core.Program>
@@ -336,15 +389,36 @@ namespace Mt.GraphQL.Api.Test
         {
             private readonly HttpClient _httpClient;
 
-            public string RequestUrl { get; set; }
+            public string QueryStringOverride { get; set; }
+
+            public string RequestUrl { get; private set; }
 
             public string Json { get; private set; }
 
             public TestClient(HttpClient httpClient)
             {
                 Configuration.Url = string.Empty;
+                Configuration.CreateHttpRequestMessageHandler = CreateRequest;
                 Configuration.ProcessRequestHandler = ProcessRequest;
                 _httpClient = httpClient;
+            }
+
+            private Task<HttpRequestMessage> CreateRequest(Configuration configuration, string entityName, HttpMethod httpMethod, string query, string payload)
+            {
+                if (QueryStringOverride != null)
+                {
+                    query = QueryStringOverride;
+                    QueryStringOverride = null;
+                }
+
+                var request = new HttpRequestMessage(
+                    httpMethod,
+                    $"{configuration.Url}/{entityName}?{query}");
+                if (!string.IsNullOrEmpty(configuration.Key))
+                    request.Headers.Add(configuration.KeyHeaderName, configuration.Key);
+                if (payload != null)
+                    request.Content = new StringContent(payload);
+                return Task.FromResult(request);
             }
 
             private async Task<string> ProcessRequest(Configuration configuration, HttpRequestMessage httpRequestMessage)

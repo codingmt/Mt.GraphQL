@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Mt.GraphQL.Internal
 {
@@ -35,5 +36,11 @@ namespace Mt.GraphQL.Internal
                 .OrderByDescending(p => declaringTypes[p.DeclaringType])
                 .ToArray();
         }
+
+        public static bool IsReadWriteAutoProperty(this PropertyInfo propertyInfo) =>
+            propertyInfo.CanRead &&
+            propertyInfo.CanWrite &&
+            propertyInfo.GetMethod.GetCustomAttribute<CompilerGeneratedAttribute>() != null &&
+            propertyInfo.SetMethod.GetCustomAttribute<CompilerGeneratedAttribute>() != null;
     }
 }

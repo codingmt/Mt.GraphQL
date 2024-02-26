@@ -12,5 +12,9 @@ namespace Mt.GraphQL.Api.Test.Web.Core.Models
         [ForeignKey(nameof(Customer))]
         public int Customer_Id { get; set; }
         public Customer Customer { get; set; }
+        public bool FunctionIsSet 
+        {
+            get => Function != null;
+        }
     }
 }

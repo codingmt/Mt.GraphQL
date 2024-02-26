@@ -12,9 +12,9 @@ namespace Mt.GraphQL.Api.Test.Web.Core.EF
                 Customers.AddRange(
                     new[]
                     {
-                        new Customer{ Id = 1, Name = "Customer 1" },
-                        new Customer{ Id = 2, Name = "Customer 2" },
-                        new Customer{ Id = 3, Name = "Customer 3" }
+                        new Customer{ Id = 1, Name = "Customer 1", Code = "C1" },
+                        new Customer{ Id = 2, Name = "Customer 2", Code = "C2" },
+                        new Customer{ Id = 3, Name = "Customer 3", Code = "C3" }
                     });
 
                 Contacts.AddRange(

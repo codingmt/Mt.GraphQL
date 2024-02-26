@@ -87,11 +87,14 @@ namespace Mt.GraphQL.Internal
                     .ToDictionary(p => p.Property.Name.ToLower());
                 Configured = configured;
 
+                _excludedColumns.AddRange(copyFrom.SelectMany(x => x._excludedColumns));
+
                 foreach (var property in copyFrom.SelectMany(x => x._properties.Values))
                 {
                     var p = _properties[property.Name.ToLower()];
                     p.IsIndexed |= property.IsIndexed;
                     p.IsExtension |= property.IsExtension;
+                    p.IsExcluded |= property.IsExcluded;
                     p.Attributes.AddRange(property.Attributes);
                 }
 

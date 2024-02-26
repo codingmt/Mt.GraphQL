@@ -11,7 +11,8 @@ namespace Mt.GraphQL.Api.Test.Web.Core
         {
             GraphqlConfiguration.DefaultMaxPageSize = 200;
             GraphqlConfiguration.ConfigureBase<ModelBase>()
-                .AllowFilteringAndSorting(x => x.Id);
+                .AllowFilteringAndSorting(x => x.Id)
+                .ExcludeProperty(x => x.CreatedDate);
             GraphqlConfiguration.Configure<Customer>()
                 .AllowFilteringAndSorting(x => x.Name)
                 .ExcludeProperty(x => x.Contacts.First().Customer)

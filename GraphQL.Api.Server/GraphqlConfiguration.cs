@@ -50,7 +50,8 @@ namespace Mt.GraphQL.Api.Server
         /// </summary>
         /// <typeparam name="TProperty">The type of property.</typeparam>
         /// <param name="property">The property selector.</param>
-        public TypeConfiguration<T> AllowFilteringAndSorting<TProperty>(Expression<Func<T, TProperty>> property)
+        /// <param name="allow">Filtering and sorting is allowed.</param>
+        public TypeConfiguration<T> AllowFilteringAndSorting<TProperty>(Expression<Func<T, TProperty>> property, bool allow = true)
         {
             if (property == null)
                 throw new ArgumentNullException(nameof(property));
@@ -58,7 +59,7 @@ namespace Mt.GraphQL.Api.Server
                 (m.Expression != property.Parameters[0]))
                 throw new ArgumentException($"Argument property must select a property on type {typeof(T).Name}.");
 
-            _internalTypeConfig.SetColumnIsIndexed(m.Member.Name);
+            _internalTypeConfig.SetColumnIsIndexed(m.Member.Name, allow);
 
             return this;
         }
@@ -68,7 +69,8 @@ namespace Mt.GraphQL.Api.Server
         /// </summary>
         /// <typeparam name="TProperty">The type of property.</typeparam>
         /// <param name="property">The property selector.</param>
-        public TypeConfiguration<T> ExcludeProperty<TProperty>(Expression<Func<T, TProperty>> property)
+        /// <param name="exclude">Exclude the property.</param>
+        public TypeConfiguration<T> ExcludeProperty<TProperty>(Expression<Func<T, TProperty>> property, bool exclude = true)
         {
             if (property == null)
                 throw new ArgumentNullException(nameof(property));
@@ -94,7 +96,7 @@ namespace Mt.GraphQL.Api.Server
             if (body != property.Parameters[0])
                 throw new ArgumentException($"Argument property must select a property on type {typeof(T).Name}.");
 
-            _internalTypeConfig.ExcludeColumn(member.Substring(1));
+            _internalTypeConfig.ExcludeColumn(member.Substring(1), exclude);
 
             return this;
         }
@@ -104,7 +106,8 @@ namespace Mt.GraphQL.Api.Server
         /// </summary>
         /// <typeparam name="TProperty">The type of navigation property.</typeparam>
         /// <param name="property">The navigation property.</param>
-        public TypeConfiguration<T> IsExtension<TProperty>(Expression<Func<T, TProperty>> property)
+        /// <param name="isExtension">The property is an extension.</param>
+        public TypeConfiguration<T> IsExtension<TProperty>(Expression<Func<T, TProperty>> property, bool isExtension = true)
         {
             if (property == null)
                 throw new ArgumentNullException(nameof(property));
@@ -132,7 +135,7 @@ namespace Mt.GraphQL.Api.Server
             if (body != property.Parameters[0])
                 throw new ArgumentException($"Argument property must select a property on type {typeof(T).Name}.");
 
-            _internalTypeConfig.IsExtension(member.Substring(1));
+            _internalTypeConfig.IsExtension(member.Substring(1), isExtension);
 
             return this;
         }

@@ -140,6 +140,53 @@ namespace Mt.GraphQL.Internal
                         : maxPageSize;
             }
 
+            public object GetMetaInformation()
+            {
+                var typesDescribed = new List<Type> { _type };
+
+                return describeProperties(this);
+
+                object describeProperties(InternalTypeConfig config) =>
+                    config._properties.Values
+                        .Where(x => !x.IsExcluded)
+                        .Select(x =>
+                            new
+                            {
+                                x.Name,
+                                Type = describePropertyType(x.Property),
+                                x.IsIndexed,
+                                x.IsExtension
+                            })
+                        .Where(x => x.Type != null)
+                        .ToDictionary(x => x.Name, x => new { x.Type, CanFilterAndSort = x.IsIndexed, x.IsExtension });
+
+                object describePropertyType(PropertyInfo propertyInfo)
+                {
+                    var propertyType = propertyInfo.PropertyType;
+                    if (propertyType == typeof(string))
+                    {
+                        var len = propertyInfo.GetCustomAttribute<StringLengthAttribute>()?.MaximumLength;
+                        return $"String{(len.HasValue ? $"({len})" : string.Empty)}";
+                    }
+                    else if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                        return $"{propertyType.GetGenericArguments()[0].Name}?";
+                    else if (!propertyType.IsClass && !propertyType.IsInterface)
+                        return propertyType.Name;
+                    else
+                    {
+                        var isCollection = typeof(ICollection).IsAssignableFrom(propertyType) && propertyType.IsGenericType;
+                        if (isCollection)
+                            propertyType = propertyType.GetGenericArguments()[0];
+                        if (typesDescribed.Contains(propertyType))
+                            return null;
+                        typesDescribed.Add(propertyType);
+                        var result = describeProperties(GetTypeConfiguration(propertyType));
+                        typesDescribed.Remove(propertyType);
+                        return isCollection ? new[] { result } : result;
+                    }
+                }
+            }
+
             /// <summary>
             /// Returns a model class.
             /// </summary>

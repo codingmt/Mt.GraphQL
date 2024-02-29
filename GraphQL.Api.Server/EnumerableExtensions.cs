@@ -50,6 +50,10 @@ namespace System.Collections.Generic
         private static object InnerApply<T>(IEnumerable<T> source, IQueryInternal<T> query)
             where T : class
         {
+            var config = Mt.GraphQL.Internal.Configuration.GetTypeConfiguration<T>();
+            if (query.Meta == true)
+                return config.GetMetaInformation();
+
             IEnumerable set = source;
 
             if (query.Expressions.FilterExpression != null)
@@ -81,7 +85,7 @@ namespace System.Collections.Generic
                 set = (IEnumerable)skipMethod.Invoke(null, new object[] { set, query.Skip.Value });
             }
 
-            var take = Mt.GraphQL.Internal.Configuration.GetTypeConfiguration<T>().GetPageSize(query.Take);
+            var take = config.GetPageSize(query.Take);
             if (take.HasValue)
             {
                 query.Take = take;

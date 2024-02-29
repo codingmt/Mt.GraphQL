@@ -1,9 +1,7 @@
 ﻿using Mt.GraphQL.Internal;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Drawing;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 
 namespace Mt.GraphQL.Api
@@ -130,6 +128,11 @@ namespace Mt.GraphQL.Api
         /// Indicates that the items should be counted.
         /// </summary>
         public bool? Count { get; set; }
+
+        /// <summary>
+        /// Show meta information about the entity.
+        /// </summary>
+        public bool? Meta { get; set; }
 
         QueryExpressions<T> IQueryInternal<T>.Expressions => _expressions;
 

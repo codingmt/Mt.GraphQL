@@ -79,6 +79,9 @@ namespace System.Linq
             where T : class
         {
             var config = Mt.GraphQL.Internal.Configuration.GetTypeConfiguration<T>();
+            if (query.Meta == true)
+                return config.GetMetaInformation();
+
             var take = config.GetPageSize(query.Take);
             if ((take > 0 || query.Skip > 0) && !query.Expressions.OrderBy.Any())
             {

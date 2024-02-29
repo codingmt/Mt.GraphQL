@@ -384,12 +384,69 @@ namespace Mt.GraphQL.Api.Test
             Assert.That(result[0].Name, Is.EqualTo("Contact 1.1"));
         }
 
+        [Test]
+        public async Task TestMeta()
+        {
+            var meta = await _client.HttpClient.GetStringAsync("/Customer?meta=true");
+
+            Assert.That(meta, Is.EqualTo(@"{
+  ""Id"": {
+    ""type"": ""Int32"",
+    ""canFilterAndSort"": true,
+    ""isExtension"": false
+  },
+  ""Name"": {
+    ""type"": ""String(50)"",
+    ""canFilterAndSort"": true,
+    ""isExtension"": false
+  },
+  ""Code"": {
+    ""type"": ""String(10)"",
+    ""canFilterAndSort"": false,
+    ""isExtension"": false
+  },
+  ""Contacts"": {
+    ""type"": [
+      {
+        ""Id"": {
+          ""type"": ""Int32"",
+          ""canFilterAndSort"": true,
+          ""isExtension"": false
+        },
+        ""Name"": {
+          ""type"": ""String(50)"",
+          ""canFilterAndSort"": true,
+          ""isExtension"": false
+        },
+        ""Function"": {
+          ""type"": ""String(50)"",
+          ""canFilterAndSort"": false,
+          ""isExtension"": false
+        },
+        ""IsAuthorizedToSign"": {
+          ""type"": ""Boolean"",
+          ""canFilterAndSort"": false,
+          ""isExtension"": false
+        },
+        ""DateOfBirth"": {
+          ""type"": ""DateTime?"",
+          ""canFilterAndSort"": false,
+          ""isExtension"": false
+        }
+      }
+    ],
+    ""canFilterAndSort"": false,
+    ""isExtension"": false
+  }
+}"));
+        }
+
         private class TestWebApp : WebApplicationFactory<Web.Core.Program>
         { }
 
         private class TestClient : ClientBase
         {
-            private readonly HttpClient _httpClient;
+            public readonly HttpClient HttpClient;
 
             public string QueryStringOverride { get; set; }
 
@@ -402,7 +459,7 @@ namespace Mt.GraphQL.Api.Test
                 Configuration.Url = string.Empty;
                 Configuration.CreateHttpRequestMessageHandler = CreateRequest;
                 Configuration.ProcessRequestHandler = ProcessRequest;
-                _httpClient = httpClient;
+                HttpClient = httpClient;
             }
 
             private Task<HttpRequestMessage> CreateRequest(Configuration configuration, string entityName, HttpMethod httpMethod, string query, string payload)
@@ -427,7 +484,7 @@ namespace Mt.GraphQL.Api.Test
             {
                 RequestUrl = httpRequestMessage.RequestUri.OriginalString;
 
-                var response = await _httpClient.SendAsync(httpRequestMessage);
+                var response = await HttpClient.SendAsync(httpRequestMessage);
                 if (!response.IsSuccessStatusCode)
                     throw new HttpStatusCodeException(response.StatusCode, response.ReasonPhrase, await response.Content.ReadAsStringAsync());
 

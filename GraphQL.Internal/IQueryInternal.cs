@@ -10,6 +10,7 @@ namespace Mt.GraphQL.Internal
         int? Skip { get; set; }
         int? Take { get; set; }
         bool? Count { get; set; }
+        bool? Meta { get; set; }
     }
 
     public interface IQueryInternal<T, TResult> : IQueryInternal<T>

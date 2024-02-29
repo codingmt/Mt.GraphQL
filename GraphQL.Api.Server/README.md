@@ -102,6 +102,7 @@ public IHttpActionResult GetContacts([FromUri]Query<Contact> query)
 # Server configuration
 To customize the way entities can be queried, they can be configured in the startup of the API using `GraphqlConfiguration.Configure<>()`. You can configure 
 - the maximum page size, globally and per entity
+- which column to order by if not specified in the query
 - which columns can be used for fitering and sorting (to avoid poorly performing queries which filter on database columns that aren't indexed)
 - which serialization attributes should be applied to properties
 - which properties should be hidden
@@ -111,6 +112,7 @@ Configurations can also be applied to base classes using `GraphqlConfiguration.C
 ```c#
 GraphqlConfiguration.DefaultMaxPageSize = 200;
 GraphqlConfiguration.ConfigureBase<ModelBase>()
+    .DefaultOrderBy(x => x.Id)
     .AllowFilteringAndSorting(x => x.Id);
 GraphqlConfiguration.Configure<Customer>()
     .AllowFilteringAndSorting(x => x.Name)

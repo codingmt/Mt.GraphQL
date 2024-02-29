@@ -79,7 +79,8 @@ namespace System.Linq
             where T : class
         {
             var config = Mt.GraphQL.Internal.Configuration.GetTypeConfiguration<T>();
-            if ((query.Take > 0 || query.Skip > 0) && !query.Expressions.OrderBy.Any())
+            var take = config.GetPageSize(query.Take);
+            if ((take > 0 || query.Skip > 0) && !query.Expressions.OrderBy.Any())
             {
                 if (string.IsNullOrEmpty(config.DefaultOrderBy))
                     throw new QueryException(query.ToString(), "You cannot use Skip or Take without OrderBy or OrderByDescending.");
@@ -124,7 +125,6 @@ namespace System.Linq
                 set = (IQueryable)skipMethod.Invoke(null, new object[] { set, query.Skip.Value });
             }
 
-            var take = config.GetPageSize(query.Take);
             if (take.HasValue)
             {
                 query.Take = take;

@@ -34,6 +34,7 @@ namespace Mt.GraphQL.Api.Test
                 _client.Json, 
                 Is.EqualTo(@"{
   ""query"": {
+    ""orderBy"": ""Id"",
     ""take"": 200
   },
   ""data"": [
@@ -81,6 +82,7 @@ namespace Mt.GraphQL.Api.Test
                 _client.Json, 
                 Is.EqualTo(@"{
   ""query"": {
+    ""orderBy"": ""Id"",
     ""take"": 200
   },
   ""data"": [

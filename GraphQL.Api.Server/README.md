@@ -127,3 +127,6 @@ GraphqlConfiguration.Configure<Contact>()
     .ExcludeProperty(x => x.Customer.Contacts)
     .IsExtension(x => x.Customer);
 ```
+
+# Meta information
+To get information about the data that will be returned, a meta information object can be requested using query string `?meta=true`. The response will contain property names and types, along with information whether the property is indexed or if it is an extension.

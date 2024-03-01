@@ -174,9 +174,9 @@ namespace Mt.GraphQL.Internal
                         return propertyType.Name;
                     else
                     {
-                        var isCollection = typeof(ICollection).IsAssignableFrom(propertyType) && propertyType.IsGenericType;
+                        var isCollection = propertyType.IsCollectionType(out var itemType);
                         if (isCollection)
-                            propertyType = propertyType.GetGenericArguments()[0];
+                            propertyType = itemType;
                         if (typesDescribed.Contains(propertyType))
                             return null;
                         typesDescribed.Add(propertyType);
@@ -310,14 +310,10 @@ namespace Mt.GraphQL.Internal
                                     if (propertyConfig.Property.PropertyType != typeof(string) && 
                                         (propertyConfig.Property.PropertyType.IsClass || propertyConfig.Property.PropertyType.IsInterface))
                                     {
-                                        if (typeof(ICollection).IsAssignableFrom(propertyConfig.Property.PropertyType))
-                                        {
-                                            if (!propertyConfig.Property.PropertyType.IsGenericType)
-                                                throw new InternalException($"Generic type expected for property {propertyName}");
-                                            cfg = GetTypeConfiguration(propertyConfig.Property.PropertyType.GetGenericArguments()[0]);
-                                        }
-                                        else
-                                            cfg = GetTypeConfiguration(propertyConfig.Property.PropertyType);
+                                        cfg = GetTypeConfiguration(
+                                            propertyConfig.Property.PropertyType.IsCollectionType(out var itemType)
+                                                ? itemType
+                                                : propertyConfig.Property.PropertyType);
                                     }
                                 }
 

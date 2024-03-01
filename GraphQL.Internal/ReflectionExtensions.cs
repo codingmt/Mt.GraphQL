@@ -26,15 +26,26 @@ namespace Mt.GraphQL.Internal
         {
             var declaringTypes = new Dictionary<Type, int>();
             var t = fromType;
-            while (t != typeof(object))
+            while (t != null && t != typeof(object))
             {
                 declaringTypes.Add(t, declaringTypes.Count);
                 t = t.BaseType;
             }
 
             return fromType.GetProperties()
-                .OrderByDescending(p => declaringTypes[p.DeclaringType])
+                .OrderByDescending(p => declaringTypes.TryGetValue(p.DeclaringType, out var i) ? i : 0)
                 .ToArray();
+        }
+
+        public static bool IsCollectionType(this Type type) => type.IsCollectionType(out var _);
+
+        public static bool IsCollectionType(this Type type, out Type itemType)
+        {
+            itemType = null;
+            if (!type.IsGenericType)
+                return false;
+            itemType = type.GetGenericArguments()[0];
+            return typeof(ICollection<>).MakeGenericType(itemType).IsAssignableFrom(type);
         }
 
         public static bool IsReadWriteAutoProperty(this PropertyInfo propertyInfo) =>

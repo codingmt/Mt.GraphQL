@@ -240,11 +240,12 @@ namespace Mt.GraphQL.Api
                 resultMapping = visitor.ResultMapping;
             }
 
+            var sc = StringComparison.OrdinalIgnoreCase;
             var o = JObject.Parse(json);
             return new QueryArrayResponse<TResult>
                 (
-                    o.GetValue("query").ToObject<QueryData>(),
-                    JArray.FromObject(o.Value<object>("data"))?.Select(resultMapping).ToArray()
+                    o.GetValue("query", sc).ToObject<QueryData>(),
+                    JArray.FromObject(o.GetValue("data", sc).ToObject<object>())?.Select(resultMapping).ToArray()
                 );
         }
     }

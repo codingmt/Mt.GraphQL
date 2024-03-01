@@ -89,8 +89,11 @@ namespace Mt.GraphQL.Internal
             var getPropertyFunctions = properties
                 .Select((p, i) => 
                 {
-                    var member = Members[i].ToLower()[0] + Members[i].Substring(1);
-                    return (Func<JToken, object>)createGetPropertyFunctionMethod.MakeGenericMethod(p.PropertyType).Invoke(null, new object[] { member });
+                    var memberCamelCase = Members[i].ToLower()[0] + Members[i].Substring(1);
+                    var memberPascalCase = Members[i].ToUpper()[0] + Members[i].Substring(1);
+                    return (Func<JToken, object>)createGetPropertyFunctionMethod
+                        .MakeGenericMethod(p.PropertyType)
+                        .Invoke(null, new object[] { memberCamelCase, memberPascalCase });
                 })
                 .ToArray();
 
@@ -110,9 +113,9 @@ namespace Mt.GraphQL.Internal
             #pragma warning restore CS8603 // Possible null reference return.
         }
 
-        private static Func<JToken, object> CreateGetPropertyFunction<T>(string jsonMemberName) =>
+        private static Func<JToken, object> CreateGetPropertyFunction<T>(string jsonMemberNameCamelCase, string jsonMemberNamePascalCase) =>
             #pragma warning disable CS8604 // Possible null reference argument.
-            jToken => jToken[jsonMemberName].Value<T>();
+            jToken => (jToken[jsonMemberNameCamelCase] ?? jToken[jsonMemberNamePascalCase]).Value<T>();
             #pragma warning restore CS8604 // Possible null reference argument.
     }
 }

@@ -174,6 +174,8 @@ namespace Mt.GraphQL.Api
             destination.Expressions.RestrictToModel = _expressions.RestrictToModel;
             destination.Skip = Skip;
             destination.Take = Take;
+            destination.Count = Count;
+            destination.Meta = Meta;
         }
 
         /// <summary>
@@ -192,6 +194,14 @@ namespace Mt.GraphQL.Api
         /// <param name="sb">The <see cref="StringBuilder"/> to add items to.</param>
         protected virtual void AddToString(StringBuilder sb)
         {
+            if (Meta == true)
+            {
+                if (sb.Length > 0)
+                    sb.Append('&');
+                sb.Append($"meta=true");
+                return;
+            }
+
             var select = Select;
             if (string.IsNullOrEmpty(select) && _expressions.RestrictToModel)
                 select = string.Join(",", typeof(T).GetPropertiesInheritedFirst().Select(p => p.Name));

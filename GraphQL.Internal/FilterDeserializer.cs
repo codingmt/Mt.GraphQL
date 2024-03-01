@@ -161,14 +161,16 @@ namespace Mt.GraphQL.Internal
                     {
                         var ownerType = typeof(T);
                         Expression result = _parameter;
+                        PropertyInfo property = null;
                         foreach (var member in match.Groups["member"].Value.Split(new[] { '.' }))
                         {
-                            var property = ownerType.GetProperties().SingleOrDefault(p => p.Name.Equals(member, StringComparison.OrdinalIgnoreCase))
+                            property = ownerType.GetProperties().SingleOrDefault(p => p.Name.Equals(member, StringComparison.OrdinalIgnoreCase))
                                 ?? throw new QueryInternalException(_filter, $"Property {member} was not found on type {ownerType.Name}");
-                            Configuration.ValidateMemberIsIndexed(property);
                             result = Expression.Property(result, property);
                             ownerType = property.PropertyType;
                         }
+
+                        Configuration.ValidateMemberIsIndexed(property);
 
                         _position += match.Length;
                         return result;

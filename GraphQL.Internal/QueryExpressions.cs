@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Mt.GraphQL.Internal
 {
@@ -110,20 +111,23 @@ namespace Mt.GraphQL.Internal
             var entityType = parameter.Type;
             Expression expr = parameter;
             Expression[] attributes = null;
+            PropertyInfo entityProp = null;
             foreach (var part in memberExpression.Split('.'))
             {
                 var modelProp = modelType.GetProperties().SingleOrDefault(x => x.Name.Equals(part, StringComparison.OrdinalIgnoreCase))
                     ?? throw new QueryInternalException(memberExpression, $"Could not parse expression; {part} not found on model.");
-                var entityProp = entityType.GetProperties().SingleOrDefault(x => x.Name.Equals(part, StringComparison.OrdinalIgnoreCase))
+                entityProp = entityType.GetProperties().SingleOrDefault(x => x.Name.Equals(part, StringComparison.OrdinalIgnoreCase))
                     ?? throw new QueryInternalException(memberExpression, $"Could not parse expression; {part} not found on entity.");
-                if (validateIndexed)
-                    Configuration.ValidateMemberIsIndexed(entityProp);
                 expr = Expression.Property(expr, entityProp);
                 modelType = modelProp.PropertyType;
                 entityType = entityProp.PropertyType;
                 attributes = modelProp.GetAttributeExpressions().ToArray();
                 normalizedMemberExpression = $"{normalizedMemberExpression}.{modelProp.Name}";
             }
+
+            if (validateIndexed)
+                Configuration.ValidateMemberIsIndexed(entityProp);
+
             memberExpression = normalizedMemberExpression.Substring(1);
             return (Expression.Lambda(expr, parameter), modelType, attributes);
         }

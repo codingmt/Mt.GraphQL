@@ -41,7 +41,7 @@ namespace Mt.GraphQL.Internal
                 _typeCounters[typeName] = ++counter;
                 typename = $"{typeName}_{counter}";
             }
-            var builder = _moduleBuilder.DefineType(typename);
+            var builder = _moduleBuilder.DefineType($"{Namespace}.{typename}");
 
             // Set XmlType attribute to serialize to correct type name when serializing to XML
             builder.SetCustomAttribute(

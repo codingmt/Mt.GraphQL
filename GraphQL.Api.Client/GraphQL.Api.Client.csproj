@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/codingmt/Mt.GraphQL</RepositoryUrl>
     <PackageTags>graphql</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.2.6</Version>
+    <Version>1.2.7</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,9 +32,13 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
   <Target Name="PrePackage" AfterTargets="Build">
     <ItemGroup>
-      <None Include="$(TargetDir)\Mt.GraphQL.Api.dll;$(TargetDir)\Mt.GraphQL.Api.xml;$(TargetDir)\Mt.GraphQL.Api.pdb;$(TargetDir)\Mt.GraphQL.Internal.*">
+      <None Include="$(TargetDir)\Mt.GraphQL.Api.dll;$(TargetDir)\Mt.GraphQL.Api.xml;$(TargetDir)\Mt.GraphQL.Api.pdb;$(TargetDir)\Mt.GraphQL.Api.Client.pdb;$(TargetDir)\Mt.GraphQL.Internal.*">
         <Pack>true</Pack>
         <PackagePath>\lib\netstandard2.0</PackagePath>
       </None>

@@ -1,5 +1,5 @@
 ﻿# Introduction
-Using GraphQL queries, the client of your API can control how entities are returned by applying filtering, sorting, paging and/or selecting just one or a few of the entity's properties, all specified in the request. The [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) package allows developers to call a Mt.GraphQL enabled API using intuitive Linq-like expressions. 
+Using GraphQL queries, the client of your API can control how entities are returned by applying custom filtering, sorting, paging and/or selecting just one or a few of the entity's properties, all specified in the request. The [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) package allows developers to call a Mt.GraphQL enabled API using intuitive Linq-like expressions. 
 
 Use the [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) package and check it's README to set up the server.
 

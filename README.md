@@ -1,5 +1,5 @@
 # Introduction
-Using GraphQL queries, the client of an API can control how entities are returned by applying filtering, sorting, paging and/or selecting just one or a few of the entity's properties, all specified in the request. Mt.GraphQL contains libraries for exposing and querying APIs using GraphQL. Client side, a request can be built using Linq-like expressions. Server-side, the query can be applied directly to `IQueryables<>` from EntityFramework.
+Using GraphQL queries, the client of an API can control how entities are returned by applying custom filtering, sorting, paging and/or selecting just one or a few of the entity's properties, all specified in the request. Mt.GraphQL contains libraries for exposing and querying APIs using GraphQL. Client side, a request can be built using Linq-like expressions. Server-side, the query can be applied directly to `IQueryables<>` from EntityFramework.
 
 # Client
 For the client side, package [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) is used. A client class can be created to expose queries on entities. Using those queries, you can select a part of the entity's properties, filter the results, sort them and/or apply paging.

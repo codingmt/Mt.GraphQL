@@ -6,7 +6,7 @@
     <RootNamespace>Mt.$(MSBuildProjectName)</RootNamespace>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Title>Mt.GraphQL API Server Library</Title>
+    <Title>GraphQL API Server library</Title>
     <Authors>codingmt</Authors>
     <Company>Marcel Timmerman IT Consultancy</Company>
     <Description>Server library for serving GraphQL methods from ASP.Net and ASP.Net Core.</Description>
@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/codingmt/Mt.GraphQL</RepositoryUrl>
     <PackageTags>graphql</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.2.7</Version>
+    <Version>1.2.8</Version>
   </PropertyGroup>
 
   <ItemGroup>

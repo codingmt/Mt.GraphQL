@@ -154,7 +154,7 @@ namespace Mt.GraphQL.Internal
                             {
                                 x.Name,
                                 Type = describePropertyType(x.Property),
-                                x.IsIndexed,
+                                IsIndexed = !Configured || x.IsIndexed,
                                 x.IsExtension
                             })
                         .Where(x => x.Type != null)

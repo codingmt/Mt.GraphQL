@@ -50,7 +50,7 @@ public ActionResult GetContacts(Query<Contact> query)
     {
         using (var context = new DbContext())
         {
-            return Json(context.Contacts.Apply(query));
+            return Json(context.Contacts.Apply(query), JsonRequestBehavior.AllowGet);
         }
     }
     catch (QueryException ex)

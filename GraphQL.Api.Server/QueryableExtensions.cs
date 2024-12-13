@@ -78,6 +78,8 @@ namespace System.Linq
         private static object InnerApply<T>(IQueryable<T> source, IQueryInternal<T> query)
             where T : class
         {
+            if (query == null) query = new Query<T>();
+
             var config = Mt.GraphQL.Internal.Configuration.GetTypeConfiguration<T>();
             if (query.Meta == true)
                 return config.GetMetaInformation();

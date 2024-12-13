@@ -9,10 +9,10 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework.Controllers
     [AllowAnonymous]
     public class ApiController : System.Web.Http.ApiController
     {
-        [HttpGet, Route("Contact")]
+        [HttpGet, Route("Api/Contact")]
         public IHttpActionResult GetContacts([FromUri]Query<Contact> query) => Get(c => c.Contacts, query);
 
-        [HttpGet, Route("Customer")]
+        [HttpGet, Route("Api/Customer")]
         public IHttpActionResult GetCustomers([FromUri] Query<Customer> query) => Get(c => c.Customers, query);
 
         private IHttpActionResult Get<T>(Func<DbContext, IQueryable<T>> getSet, Query<T> query)
@@ -25,12 +25,7 @@ namespace Mt.GraphQL.Api.Test.Web.NetFramework.Controllers
             {
                 using (var context = new DbContext())
                 {
-                    return Ok(
-                        new
-                        {
-                            query,
-                            data = getSet(context).Apply(query)
-                        });
+                    return Ok(getSet(context).Apply(query));
                 }
             }
             catch (QueryException ex)

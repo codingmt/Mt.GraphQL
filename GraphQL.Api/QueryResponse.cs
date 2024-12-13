@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -39,7 +38,6 @@ namespace Mt.GraphQL.Api
     /// Response object for queries, including the query and the data.
     /// </summary>
     /// <typeparam name="T">The type of data.</typeparam>
-    [JsonObject]
     public class QueryArrayResponse<T> : QueryResponse<T[]>, IList, IList<T>
     {
         /// <summary>

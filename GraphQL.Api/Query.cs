@@ -1,8 +1,8 @@
 ﻿using Mt.GraphQL.Internal;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Nodes;
 
 namespace Mt.GraphQL.Api
 {
@@ -273,7 +273,7 @@ namespace Mt.GraphQL.Api
     public class Query<T, TResult> : Query<T>, IQueryInternal<T, TResult>
         where T : class
     {
-        Func<JToken, TResult> IQueryInternal<T, TResult>.ResultMapping { get; set; }
+        Func<JsonNode, TResult> IQueryInternal<T, TResult>.ResultMapping { get; set; }
 
         /// <summary>
         /// Copies the querie's properties to <paramref name="destination"/>.

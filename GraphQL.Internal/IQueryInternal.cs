@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
+using System.Text.Json.Nodes;
 
 namespace Mt.GraphQL.Internal
 {
@@ -15,7 +15,7 @@ namespace Mt.GraphQL.Internal
 
     public interface IQueryInternal<T, TResult> : IQueryInternal<T>
     {
-        Func<JToken, TResult> ResultMapping { get; set; }
+        Func<JsonNode, TResult> ResultMapping { get; set; }
     }
 
     public static class QueryInternalExtensions

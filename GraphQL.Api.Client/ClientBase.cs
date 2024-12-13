@@ -80,7 +80,8 @@ namespace Mt.GraphQL.Api
                 if (!response.IsSuccessStatusCode)
                     throw new HttpStatusCodeException(response.StatusCode, response.ReasonPhrase, await response.Content.ReadAsStringAsync());
 
-                return await response.Content.ReadAsStringAsync();
+                var result = await response.Content.ReadAsStringAsync();
+                return result;
             }
         }
 

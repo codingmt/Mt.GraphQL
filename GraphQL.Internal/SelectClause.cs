@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Linq.Expressions;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Mt.GraphQL.Internal
 {
@@ -39,9 +40,9 @@ namespace Mt.GraphQL.Internal
 
     public class ExpressionSelectClause<T, TResult> : ExpressionSelectClause
     {
-        private Func<JToken, TResult> _resultMapping;
+        private Func<JsonNode, TResult> _resultMapping;
 
-        public Func<JToken, TResult> ResultMapping
+        public Func<JsonNode, TResult> ResultMapping
         {
             get
             {

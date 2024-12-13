@@ -1,8 +1,9 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Mt.GraphQL.Internal
 {
@@ -58,7 +59,7 @@ namespace Mt.GraphQL.Internal
         public SelectSerializer(Expression expression) : base(expression)
         { }
 
-        public Func<JToken, TTo> ResultMapping { get; private set; }
+        public Func<JsonNode, TTo> ResultMapping { get; private set; }
 
         public override Expression Visit(Expression node)
         {
@@ -77,7 +78,7 @@ namespace Mt.GraphQL.Internal
             return result;
         }
 
-        private Func<JToken, TTo> CreateResultMappingForAnonymousType()
+        private Func<JsonNode, TTo> CreateResultMappingForAnonymousType()
         {
             var properties = typeof(TTo).GetProperties();
             var constructor = typeof(TTo).GetConstructor(properties.Select(p => p.PropertyType).ToArray());
@@ -91,7 +92,7 @@ namespace Mt.GraphQL.Internal
                 {
                     var memberCamelCase = Members[i].ToLower()[0] + Members[i].Substring(1);
                     var memberPascalCase = Members[i].ToUpper()[0] + Members[i].Substring(1);
-                    return (Func<JToken, object>)createGetPropertyFunctionMethod
+                    return (Func<JsonNode, object>)createGetPropertyFunctionMethod
                         .MakeGenericMethod(p.PropertyType)
                         .Invoke(null, new object[] { memberCamelCase, memberPascalCase });
                 })
@@ -102,20 +103,17 @@ namespace Mt.GraphQL.Internal
                 (TTo)constructor.Invoke(getPropertyFunctions.Select(f => f(jToken)).ToArray());
         }
 
-        private Func<JToken, TTo> CreateResultMappingForMember(string memberName)
+        private Func<JsonNode, TTo> CreateResultMappingForMember(string memberName)
         {
             var type = TypeBuilder.GetType("SingleMember", new[] { (name: memberName, type: typeof(TTo), attributes: new Expression[0]) }, new Extend[0]);
             var getMethod = type.GetProperty(memberName).GetMethod;
             Func<object, TTo> getter = o => (TTo)getMethod.Invoke(o, null);
 
-            #pragma warning disable CS8603 // Possible null reference return.
-            return jToken => getter(jToken.ToObject(type)); 
-            #pragma warning restore CS8603 // Possible null reference return.
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            return jsonNode => getter(JsonSerializer.Deserialize(jsonNode, type, options)); 
         }
 
-        private static Func<JToken, object> CreateGetPropertyFunction<T>(string jsonMemberNameCamelCase, string jsonMemberNamePascalCase) =>
-            #pragma warning disable CS8604 // Possible null reference argument.
-            jToken => (jToken[jsonMemberNameCamelCase] ?? jToken[jsonMemberNamePascalCase]).Value<T>();
-            #pragma warning restore CS8604 // Possible null reference argument.
+        private static Func<JsonNode, object> CreateGetPropertyFunction<T>(string jsonMemberNameCamelCase, string jsonMemberNamePascalCase) =>
+            jsonNode => (jsonNode[jsonMemberNameCamelCase] ?? jsonNode[jsonMemberNamePascalCase]).GetValue<T>();
     }
 }

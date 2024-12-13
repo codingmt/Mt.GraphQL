@@ -1,6 +1,8 @@
 ﻿using Mt.GraphQL.Internal;
-using Newtonsoft.Json;
 using System;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Mt.GraphQL.Api
@@ -18,6 +20,12 @@ namespace Mt.GraphQL.Api
     public class ClientQuery<T> : Query<T>, IClientQuery
         where T : class
     {
+        private static readonly JsonSerializerOptions _jsonSerializerOptions =
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
         ClientBase IClientQuery.Client { get; set; }
         string IClientQuery.Entity { get; set; }
 
@@ -56,8 +64,11 @@ namespace Mt.GraphQL.Api
         /// <summary>
         /// Get an array of results.
         /// </summary>
-        public async Task<QueryArrayResponse<T>> ToArrayAsync() =>
-            JsonConvert.DeserializeObject<QueryArrayResponse<T>>(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
+        public async Task<QueryArrayResponse<T>> ToArrayAsync()
+        {
+            var json = await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString());
+            return this.ParseJson(json);
+        }
 
         /// <summary>
         /// Gets the number of results.
@@ -65,7 +76,7 @@ namespace Mt.GraphQL.Api
         public async Task<QueryCountResponse> CountAsync()
         {
             Count = true;
-            return JsonConvert.DeserializeObject<QueryCountResponse>(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()));
+            return JsonSerializer.Deserialize<QueryCountResponse>(await this.GetClient().FetchDataAsync(((IClientQuery)this).Entity, ToString()), _jsonSerializerOptions);
         }
     }
 

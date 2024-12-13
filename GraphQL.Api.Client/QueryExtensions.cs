@@ -1,8 +1,9 @@
 ﻿using Mt.GraphQL.Internal;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Mt.GraphQL.Api
 {
@@ -240,12 +241,31 @@ namespace Mt.GraphQL.Api
                 resultMapping = visitor.ResultMapping;
             }
 
-            var sc = StringComparison.OrdinalIgnoreCase;
-            var o = JObject.Parse(json);
+            var serializerOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var o = JsonNode.Parse(json);
             return new QueryArrayResponse<TResult>
                 (
-                    o.GetValue("query", sc).ToObject<QueryData>(),
-                    JArray.FromObject(o.GetValue("data", sc).ToObject<object>())?.Select(resultMapping).ToArray()
+                    JsonSerializer.Deserialize<QueryData>(o["query"], serializerOptions),
+                    o["data"].AsArray()?.Select(resultMapping).ToArray()
+                );
+        }
+
+        /// <summary>
+        /// Parses a received json message to the <typeparamref name="T"/> type.
+        /// </summary>
+        /// <typeparam name="T">The type of source entity.</typeparam>
+        /// <param name="query">The <see cref="Query{T, TResult}"/> used to request the received json.</param>
+        /// <param name="json">The received json.</param>
+        /// <returns>An array of <typeparamref name="T"/>.</returns>
+        public static QueryArrayResponse<T> ParseJson<T>(this Query<T> query, string json)
+            where T : class
+        {
+            var serializerOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var o = JsonNode.Parse(json);
+            return new QueryArrayResponse<T>
+                (
+                    JsonSerializer.Deserialize<QueryData>(o["query"], serializerOptions),
+                    JsonSerializer.Deserialize<T[]>(o["data"], serializerOptions)
                 );
         }
     }

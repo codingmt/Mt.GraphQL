@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
 using Mt.GraphQL.Api.Server;
 using Mt.GraphQL.Api.Test.Web.Core.Models;
+using System.Text.Json;
 
 namespace Mt.GraphQL.Api.Test
 {

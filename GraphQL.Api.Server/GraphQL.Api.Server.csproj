@@ -35,6 +35,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
+  </ItemGroup>
+
   <Target Name="PrePackage" AfterTargets="Build">
     <ItemGroup>
       <None Include="$(TargetDir)\Mt.GraphQL.Api.dll;$(TargetDir)\Mt.GraphQL.Api.xml;$(TargetDir)\Mt.GraphQL.Api.pdb;$(TargetDir)\Mt.GraphQL.Api.Server.pdb;$(TargetDir)\Mt.GraphQL.Internal.*">

@@ -141,7 +141,7 @@ namespace Mt.GraphQL.Api.Server
         }
 
         /// <summary>
-        /// Configures a property as fit for filtering and ordering.
+        /// Configures an attribute on a property.
         /// </summary>
         /// <typeparam name="TProperty">The type of property.</typeparam>
         /// <typeparam name="TAttribute">The type of attribute.</typeparam>

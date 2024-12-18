@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
 using Mt.GraphQL.Api.Server;
 using Mt.GraphQL.Api.Test.Web.Core.Models;
-using System.Text.Json;
 
 namespace Mt.GraphQL.Api.Test
 {
@@ -44,28 +43,32 @@ namespace Mt.GraphQL.Api.Test
       ""name"": ""Contact 1.1"",
       ""function"": ""CEO"",
       ""isAuthorizedToSign"": true,
-      ""dateOfBirth"": ""1970-05-15""
+      ""dateOfBirth"": ""1970-05-15"",
+      ""customer_Id"": 1
     },
     {
       ""id"": 2,
       ""name"": ""Contact 1.2"",
       ""function"": ""Secretary"",
       ""isAuthorizedToSign"": false,
-      ""dateOfBirth"": ""1980-06-16""
+      ""dateOfBirth"": ""1980-06-16"",
+      ""customer_Id"": 1
     },
     {
       ""id"": 3,
       ""name"": ""Contact 1.3"",
       ""function"": ""Sales Mgr"",
       ""isAuthorizedToSign"": false,
-      ""dateOfBirth"": ""1990-07-17""
+      ""dateOfBirth"": ""1990-07-17"",
+      ""customer_Id"": 1
     },
     {
       ""id"": 4,
       ""name"": ""Contact 2.1"",
       ""function"": ""CEO"",
       ""isAuthorizedToSign"": true,
-      ""dateOfBirth"": ""1971-05-18""
+      ""dateOfBirth"": ""1971-05-18"",
+      ""customer_Id"": 2
     }
   ]
 }"));
@@ -232,14 +235,16 @@ namespace Mt.GraphQL.Api.Test
       ""name"": ""Contact 1.1"",
       ""function"": ""CEO"",
       ""isAuthorizedToSign"": true,
-      ""dateOfBirth"": ""1970-05-15""
+      ""dateOfBirth"": ""1970-05-15"",
+      ""customer_Id"": 1
     },
     {
       ""id"": 2,
       ""name"": ""Contact 1.2"",
       ""function"": ""Secretary"",
       ""isAuthorizedToSign"": false,
-      ""dateOfBirth"": ""1980-06-16""
+      ""dateOfBirth"": ""1980-06-16"",
+      ""customer_Id"": 1
     }
   ]
 }"));
@@ -264,6 +269,7 @@ namespace Mt.GraphQL.Api.Test
       ""function"": ""CEO"",
       ""isAuthorizedToSign"": true,
       ""dateOfBirth"": ""1970-05-15"",
+      ""customer_Id"": 1,
       ""customer"": {
         ""id"": 1,
         ""name"": ""Customer 1""
@@ -275,6 +281,7 @@ namespace Mt.GraphQL.Api.Test
       ""function"": ""Secretary"",
       ""isAuthorizedToSign"": false,
       ""dateOfBirth"": ""1980-06-16"",
+      ""customer_Id"": 1,
       ""customer"": {
         ""id"": 1,
         ""name"": ""Customer 1""
@@ -431,7 +438,12 @@ namespace Mt.GraphQL.Api.Test
         },
         ""DateOfBirth"": {
           ""type"": ""DateTime?"",
-          ""canFilterAndSort"": false,
+          ""canFilterAndSort"": true,
+          ""isExtension"": false
+        },
+        ""Customer_Id"": {
+          ""type"": ""Int32"",
+          ""canFilterAndSort"": true,
           ""isExtension"": false
         }
       }

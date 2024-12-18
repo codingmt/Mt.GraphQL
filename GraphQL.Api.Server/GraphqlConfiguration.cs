@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -12,13 +14,23 @@ namespace Mt.GraphQL.Api.Server
     public static class GraphqlConfiguration
     {
         /// <summary>
+        /// Loads GraphQL configuration from the configuration manager.
+        /// </summary>
+        public static void FromConfiguration(ConfigurationManager configurationManager)
+        {
+            var config = new ConfigurationModel();
+            configurationManager.GetSection(nameof(GraphqlConfiguration)).Bind(config);
+            config.Apply();
+        }
+
+        /// <summary>
         /// Configures a type for GraphQL.
         /// </summary>
         public static TypeConfiguration<T> Configure<T>() where T : class =>
             new TypeConfiguration<T>(InternalConfig.GetTypeConfiguration<T>(true));
 
         /// <summary>
-        /// Configures a type for GraphQL.
+        /// Configures a base type for GraphQL.
         /// </summary>
         public static TypeConfiguration<T> ConfigureBase<T>() where T : class =>
             new TypeConfiguration<T>(InternalConfig.GetBaseTypeConfiguration<T>());
@@ -38,7 +50,7 @@ namespace Mt.GraphQL.Api.Server
     /// </summary>
     public class TypeConfiguration<T> where T : class
     {
-        private readonly InternalConfig.InternalTypeConfig _internalTypeConfig;
+        internal readonly InternalConfig.InternalTypeConfig _internalTypeConfig;
 
         internal TypeConfiguration(InternalConfig.InternalTypeConfig internalTypeConfig)
         {
@@ -60,6 +72,19 @@ namespace Mt.GraphQL.Api.Server
                 throw new ArgumentException($"Argument property must select a property on type {typeof(T).Name}.");
 
             _internalTypeConfig.SetColumnIsIndexed(m.Member.Name, allow);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Exclude all properties of this type.
+        /// </summary>
+        public TypeConfiguration<T> ExcludeAllProperties()
+        {
+            var t = typeof(T);
+            foreach (var p in t.GetProperties())
+                if (p.DeclaringType == t)
+                    _internalTypeConfig.ExcludeColumn(p.Name, true);
 
             return this;
         }
@@ -215,6 +240,177 @@ namespace Mt.GraphQL.Api.Server
             _internalTypeConfig.DefaultOrderBy = m.Member.Name;
 
             return this;
+        }
+    }
+
+    /// <summary>
+    /// Model for reading the GraphQL configuration from a configuration file.
+    /// </summary>
+    public class ConfigurationModel
+    {
+        /// <summary>
+        /// The max page size used when not configured on a type. Use 0 to disable.
+        /// </summary>
+        public int DefaultMaxPageSize { get; set; }
+
+        /// <summary>
+        /// Base type configurations.
+        /// </summary>
+        public Dictionary<string, TypeConfigurationModel> BaseConfigurations { get; set; }
+
+        /// <summary>
+        /// Type configurations.
+        /// </summary>
+        public Dictionary<string, TypeConfigurationModel> TypeConfigurations { get; set; }
+
+        /// <summary>
+        /// Model for base type or type configurations.
+        /// </summary>
+        public class TypeConfigurationModel
+        {
+            /// <summary>
+            /// The maximum page size for a type. Set to 0 to disable max page size.
+            /// </summary>
+            public int? MaxPageSize { get; set; }
+
+            /// <summary>
+            /// The property to use for ordering by default.
+            /// </summary>
+            public string DefaultOrderBy { get; set; }
+
+            /// <summary>
+            /// Exclude all properties of this type.
+            /// </summary>
+            public bool? ExcludeAllProperties { get; set; }
+
+            /// <summary>
+            /// List of property configuration models.
+            /// </summary>
+            public Dictionary<string, PropertyConfigurationModel> Properties { get; set; }
+
+            /// <summary>
+            /// Model for property configuration.
+            /// </summary>
+            public class PropertyConfigurationModel
+            {
+                /// <summary>
+                /// Configure as fit for filtering and ordering.
+                /// </summary>
+                public bool? AllowFilteringAndSorting { get; set; }
+                /// <summary>
+                /// Excludes the property or nested property from the GraphQL model.
+                /// </summary>
+                public bool? Exclude { get; set; }
+                /// <summary>
+                /// Configures a navigation property or a nested navigation property as an extension. This means that it is not returned by default, it has to be requested explicitly.
+                /// </summary>
+                public bool? IsExtension { get; set; }
+
+                internal void Apply(string name, InternalConfig.InternalTypeConfig config)
+                {
+                    if (AllowFilteringAndSorting.HasValue)
+                        config.SetColumnIsIndexed(name, AllowFilteringAndSorting.Value);
+                    if (Exclude.HasValue)
+                        config.ExcludeColumn(name, Exclude.Value);
+                    if (IsExtension.HasValue)
+                        config.IsExtension(name, IsExtension.Value);
+                }
+            }
+
+            internal void ApplyBase<T>() 
+                where T: class
+            {
+                var config = GraphqlConfiguration.ConfigureBase<T>();
+                ApplyInternal(config);
+            }
+
+            internal void Apply<T>() 
+                where T: class
+            {
+                var config = GraphqlConfiguration.Configure<T>();
+                ApplyInternal(config);
+            }
+
+            private void ApplyInternal<T>(TypeConfiguration<T> config)
+                where T: class
+            {
+                if (MaxPageSize.HasValue)
+                    config.MaxPageSize(MaxPageSize.Value);
+
+                if (ExcludeAllProperties == true)
+                    config.ExcludeAllProperties();
+
+                if (!string.IsNullOrEmpty(DefaultOrderBy))
+                {
+                    var t = typeof(T);
+                    var p = t.GetProperties().FirstOrDefault(x => 
+                        x.Name.Equals(DefaultOrderBy, StringComparison.OrdinalIgnoreCase) && 
+                        x.DeclaringType == t)
+                        ?? throw new Exception($"No DefaultOrderBy property {DefaultOrderBy} found on type {t.FullName}.");
+                    config._internalTypeConfig.DefaultOrderBy = p.Name;
+                }
+
+                foreach (var kvp in Properties)
+                    try
+                    {
+                        kvp.Value.Apply(kvp.Key, config._internalTypeConfig);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Error configuring property {kvp.Key} on type {typeof(T).FullName}.", ex);
+                    }
+            }
+        }
+
+        internal void Apply()
+        {
+            if (DefaultMaxPageSize >= 0)
+                GraphqlConfiguration.DefaultMaxPageSize = DefaultMaxPageSize;
+
+            if (BaseConfigurations == null && TypeConfigurations == null)
+                return;
+
+            var allTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).ToArray();
+            Func<string, Type> findType = name => 
+                allTypes.FirstOrDefault(t => t.AssemblyQualifiedName.Equals(name, StringComparison.OrdinalIgnoreCase)) ??
+                allTypes.FirstOrDefault(t => t.FullName.Equals(name, StringComparison.OrdinalIgnoreCase)) ??
+                allTypes.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+            if (BaseConfigurations != null)
+            {
+                var method = typeof(TypeConfigurationModel).GetMethod(nameof(TypeConfigurationModel.ApplyBase), BindingFlags.NonPublic | BindingFlags.Instance);
+                foreach (var config in BaseConfigurations)
+                {
+                    var type = findType(config.Key)
+                        ?? throw new Exception($"Type {config.Key} was not found.");
+                    try
+                    {
+                        method.MakeGenericMethod(type).Invoke(config.Value, new object[0]);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Error configuring base type {type.FullName}.", ex);
+                    }
+                }
+            }
+
+            if (TypeConfigurations != null)
+            {
+                var method = typeof(TypeConfigurationModel).GetMethod(nameof(TypeConfigurationModel.Apply), BindingFlags.NonPublic | BindingFlags.Instance);
+                foreach (var config in TypeConfigurations)
+                {
+                    var type = findType(config.Key)
+                        ?? throw new Exception($"Type {config.Key} was not found.");
+                    try
+                    {
+                        method.MakeGenericMethod(type).Invoke(config.Value, new object[0]);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Error configuring type {type.FullName}.", ex);
+                    }
+                }
+            }
         }
     }
 }

@@ -111,8 +111,12 @@ namespace Mt.GraphQL.Internal
             public bool IsColumnIndexed(string name) =>
                 _properties[name.ToLower()].IsIndexed;
 
-            public void SetColumnIsIndexed(string name, bool value) =>
-                _properties[name.ToLower()].IsIndexed = value;
+            public void SetColumnIsIndexed(string name, bool value)
+            {
+                var p = _properties[name.ToLower()];
+                p.IsIndexed = value;
+                if (value) p.IsExcluded = false;
+            }
 
             public void ExcludeColumn(string name, bool exclude)
             {

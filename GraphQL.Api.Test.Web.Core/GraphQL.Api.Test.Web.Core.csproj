@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Effort.EF6" Version="2.2.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include ="Mt.GraphQL.Api.Test"/>
+    <InternalsVisibleTo Include="Mt.GraphQL.Api.Test" />
   </ItemGroup>
   
 </Project>

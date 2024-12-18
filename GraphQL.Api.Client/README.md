@@ -4,9 +4,9 @@ Using GraphQL queries, the client of your API can control how entities are retur
 Use the [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) package and check it's README to set up the server.
 
 # Setting up a client class
-Set up the client class by deriving from the `ClientBase` class. By default, the client reads an `ApiUrl`, `ApiKey` and `ApiKeyHeaderName` setting from the environment variables. A configuration name can be specified to change this to `<configurationname>:ApiUrl`, or a custom `Configuration` object can be created. The default `ApiKeyHeaderName` is 'Api_Key'. If a different kind of authentication is required, configuration member `CreateHttpRequestMessageHandler` can be set to create a custom HTTP request. Configuration member `ProcessRequestHandler` can be set to create custom request handling.
+Set up the client class by deriving from the `ClientBase` class. 
 
-The `CreateQuery()` method is used to create a query on a client entity. The endpoint name will be the name of the model class by default, but this can be overridden using argument `entity`. When the client model contains less fields than the server model, you can set argument `restrictToModel` to true to make sure only the necessary properties are returned.
+The `CreateQuery()` method is used to create a query on a client entity. The endpoint name will be the name of the model class by default, but this can be overridden using argument `entity`. When the client model contains less fields than the server model, you can set argument `restrictToModel` to true to make sure only the necessary properties are requested.
 ```c#
 use Mt.GraphQL.Api;
 
@@ -16,8 +16,8 @@ class GraphQlClient : ClientBase
 }
 ```
 
-# Retrieving the data
-You retrieve data in an extended array class which will also contain the query parameters. The number of results could be limited by the server configuration. In that case you need to use paging (see below) to retrieve more than one page of data.
+# Fetching the data
+You receive data in an extended array class which will also contain the query parameters for your convenience. The number of results could be limited by the server configuration. In that case you need to use paging (see below) to retrieve more than one page of data.
 ```c#
 var client = new GraphQlClient();
 var data = await client.Contacts
@@ -41,7 +41,7 @@ var data = await client.Contacts
     .Where(x => x.ModifiedDate >= new DateTime(2023, 3, 29))
     .ToArrayAsync(); // query will be: /Contact?filter=ModifiedDate ge '2023-03-29'
 ```
-More examples of filters are:
+Examples of filters are:
 - `x => x.Id <= 5`
 - `x => x.Date > new DateTime(2023, 3, 29)`
 - `x => x.Name == "A"`
@@ -75,3 +75,6 @@ var data = await client.Contacts
     .Extend(x => x.VisitAddress)
     .ToArrayAsync(); // query will be /Contact?extend=VisitAddress(Street,HouseNumber,Zipcode,City)
 ```
+
+# API URL and Authentication
+By default, the `ClientBase` reads an `ApiUrl`, `ApiKey` and `ApiKeyHeaderName` setting from the environment variables. A configuration name can be specified to change this to `<configurationname>:ApiUrl`, or a custom `Configuration` object can be created. The default `ApiKeyHeaderName` is 'Api_Key'. If a different kind of authentication is required, configuration member `CreateHttpRequestMessageHandler` can be set to customize the creation of HTTP requests. Configuration member `ProcessRequestHandler` can be set to customize request handling.

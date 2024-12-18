@@ -7,32 +7,27 @@ namespace Mt.GraphQL.Api.Test.Web.Core
 {
     internal class Program
     {
-        static Program()
+        // Test project starts webserver multiple times, duplicating the configuration.
+        private static bool isConfigured = false;
+
+        private static void ConfigureGraphQL(ConfigurationManager configurationManager)
         {
-            GraphqlConfiguration.DefaultMaxPageSize = 200;
-            GraphqlConfiguration.ConfigureBase<ModelBase>()
-                .DefaultOrderBy(x => x.Id)
-                .AllowFilteringAndSorting(x => x.Id)
-                .ExcludeProperty(x => x.CreatedDate);
-            GraphqlConfiguration.Configure<Customer>()
-                .AllowFilteringAndSorting(x => x.Name)
-                .ExcludeProperty(x => x.Contacts.First().Customer)
-                .ExcludeProperty(x => x.Contacts.First().Customer_Id);
+            if (isConfigured) return;
+
+            GraphqlConfiguration.FromConfiguration(configurationManager);
             GraphqlConfiguration.Configure<Contact>()
-                .AllowFilteringAndSorting(x => x.Name)
-                .AllowFilteringAndSorting(x => x.Customer_Id)
                 .ApplyAttribute(
                     x => x.DateOfBirth,
-                    () => new JsonDateTimeConverterAttribute { Format = "yyyy-MM-dd" })
-                .ExcludeProperty(x => x.Customer_Id)
-                .ExcludeProperty(x => x.Customer.Code)
-                .IsExtension(x => x.Customer);
+                    () => new JsonDateTimeConverterAttribute { Format = "yyyy-MM-dd" });
+
+            isConfigured = true;
         }
 
         internal static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            ConfigureGraphQL(builder.Configuration);
             // Add services to the container.
 
             // Only needed when we use ApiController attribute on controllers

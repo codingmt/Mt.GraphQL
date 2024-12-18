@@ -4,7 +4,7 @@ Using GraphQL queries, the client of your API can control how entities are retur
 For .NET clients, package [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) can be used.
 
 # Controllers
-In your web project's controllers, the GraphQL queries are mapped to a generic `Query` object. The server library allows you to directly apply this query object to any `IQueryable` or `IEnumerable` of the entity's type. This means that you could optionally first filter the available data to make sure the client only retrieves what is allowed. You could of course also pass the query object to the business layer if your application pattern requires that. The `Apply()` function returns the requested data along with the used query parameters.
+In your web project's controllers, the GraphQL queries are mapped to a generic `Query` object. The server library allows you to directly apply this query object to any `IQueryable<>` or `IEnumerable<>` of the entity's type. This means that you could optionally first filter the available data to make sure the client only retrieves what is allowed. You could of course also pass the query object to the business layer if your application pattern requires that. The `Apply()` function returns the requested data along with the used query parameters.
 
 ## ASP.NET Core
 ```c#
@@ -31,7 +31,7 @@ public class ContactController : ControllerBase
 }
 ```
 
-When using `ApiController` attributes on our controllers, you can remove the part that checks the model state. Instead, add the following to the application startup:
+When using `ApiController` attributes on your controllers, you can remove the part that checks the model state. Instead, add the following to the application startup:
 ```c#
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(
@@ -73,7 +73,7 @@ public static ActionResult ToBadRequest(this ModelStateDictionary modelState, Co
             .SelectMany((v, i) => v.Errors.Select(e => $"Error in {keys[i]}: {e.Exception?.Message ?? e.ErrorMessage}"))
             .Aggregate(string.Empty, (r, v) => r + "; " + v)
             .Substring(2)
-    };                
+    };
 }
 ```
 
@@ -126,6 +126,45 @@ GraphqlConfiguration.Configure<Contact>()
         () => new JsonDateTimeConverterAttribute { Format = "yyyy-MM-dd" })
     .ExcludeProperty(x => x.Customer.Contacts)
     .IsExtension(x => x.Customer);
+```
+
+GraphQL configurations can get quite extensive. Therefore it is possible to put it in your configuration file, make sure it is available on `Microsoft.Extensions.Configuration` and call `GraphqlConfiguration.FromConfiguration()`. All settings except `ApplyAttribute()` can be read from the configuration.
+```
+{
+    "GraphqlConfiguration": {
+        "DefaultMaxPageSize": 200,
+        "BaseConfigurations": {
+            "ModelBase": {
+                "DefaultOrderBy": "Id",
+                "ExcludeAllProperties": true,
+                "Properties": {
+                    "Id": {
+                        "AllowFilteringAndSorting": true,
+                        "Exclude": false
+                    }
+                }
+            }
+        },
+        "TypeConfigurations": {
+            "Customer": {
+                "Properties": {
+                    "Name": { "AllowFilteringAndSorting": true },
+                    "Contacts.Customer": { "Exclude": true },
+                    "Contacts.Customer_Id": { "Exclude": true }
+                }
+            },
+            "Contact": {
+                "Properties": {
+                    "Name": { "AllowFilteringAndSorting": true },
+                    "Customer_Id": { "AllowFilteringAndSorting": true },
+                    "DateOfBirth": { "AllowFilteringAndSorting": true },
+                    "Customer.Code": { "Exclude": true },
+                    "Customer": { "IsExtension": true }
+                }
+            }
+        }
+    }
+}
 ```
 
 # Meta information

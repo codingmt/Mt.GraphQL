@@ -1,8 +1,8 @@
 # Introduction
-Using GraphQL queries, the client of an API can control how entities are returned by applying custom filtering, sorting, paging and/or selecting just one or a few of the entity's properties, all specified in the request. [Mt.GraphQL](https://www.nuget.org/packages?q=Mt.GraphQL) contains libraries for exposing and querying APIs using GraphQL. Client side, a request can be built using Linq-like expressions. Server-side, the query can be applied directly to `IQueryables<>` from EntityFramework.
+Using GraphQL queries, the client of an API can control how entities are returned by applying custom filtering, sorting, paging and/or selecting just one or a few of the entity's properties, all specified in the request. [Mt.GraphQL](https://www.nuget.org/packages?q=Mt.GraphQL) contains libraries for exposing and querying APIs using GraphQL. Client side, a request can be built using Linq-like expressions. Server-side, the query can be applied directly to `IQueryables<>` from EntityFramework, all requiring minimal effort.
 
 # Client
-For the client side, package [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) is used. A client class can be created to expose queries on entities. Using those queries, you can select a part of the entity's properties, filter the results, sort them and/or apply paging.
+For the client side, package [Mt.GraphQL.Api.Client](https://www.nuget.org/packages/Mt.GraphQL.Api.Client) is used. A client class can be created to expose queries on entities. Using those queries, you can select a part of the entity's properties, filter the results, sort them and/or apply paging. Check out the client package for more details.
 ```c#
 class GraphQlClient : ClientBase
 {
@@ -21,7 +21,7 @@ var result = await client.Contacts
 ```
 
 # Server
-For the server side, package [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) is used. To receive the GraphQL query, a generic Query class is used as an argument for the GET methods. This argument can be applied directly to an `IEnumerable<>` or an `IQueryable<>`, for example coming from EntityFramework's data context.
+For the server side, package [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) is used. To receive the GraphQL query, a generic Query class is used as an argument for the GET methods. This argument can be applied directly to an `IEnumerable<>` or an `IQueryable<>`, for example coming from EntityFramework's data context. Check out the server package for more details.
 
 ## ASP.Net Core
 ```c#
@@ -121,3 +121,5 @@ GraphqlConfiguration.Configure<Contact>()
     .ExcludeProperty(x => x.Customer.Contacts)
     .IsExtension(x => x.Customer);
 ```
+
+GraphQL configurations can get quite extensive. Therefore you can put the majority of it in a configuration file. Please refer to the Readme of [Mt.GraphQL.Api.Server](https://www.nuget.org/packages/Mt.GraphQL.Api.Server) for further details.
